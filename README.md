@@ -91,6 +91,22 @@ The following packages needs to be installed for the respective platforms.
 
 The following packages are easiest installed using HomeBrew:
 
-* yaml-cpp
 * pcre2
 * jemalloc
+
+### Notes on Git subtree
+
+I've included the following two Github projects as sub-tree's into this
+repository:
+
+* yaml-cpp
+* GSL: Guidelines Support Library
+
+The commands I ran to import these, and to maintain these, are as follow:
+```
+git remote add -f GSL https://github.com/Microsoft/GSL.git
+git remote add -f yaml-cpp https://github.com/jbeder/yaml-cpp.git
+
+git subtree add --prefix lib/gsl GSL master --squash
+git subtree add --prefix lib/yaml-cpp yaml-cpp yaml-cpp-0.6.2  --squash
+```
