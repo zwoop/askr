@@ -1,0 +1,81 @@
+# Prerequisites
+*.d
+
+# Object files
+*.o
+*.ko
+*.obj
+*.elf
+
+# Linker output
+*.ilk
+*.map
+*.exp
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Libraries
+*.lib
+*.a
+*.la
+*.lo
+
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# Kernel Module Compile Results
+*.mod*
+*.cmd
+.tmp_versions/
+modules.order
+Module.symvers
+Mkfile.old
+dkms.conf
+
+# Various additions from me
+.vscode/
+.deps/
+plugins/.libs/
+src/askr
+docs/html
+Makefile
+Makefile.in
+.dirstamp
+
+# A bunch of autoconf stuff
+aclocal.m4
+autom4te.cache/
+build/_aux/
+build/libtool.m4
+build/ltargz.m4
+build/ltdl.m4
+build/ltoptions.m4
+build/ltsugar.m4
+build/ltversion.m4
+build/lt~obsolete.m4
+config.log
+config.nice
+config.status
+configure
+libtool
+src/stamp-h1
+.DS_Store
