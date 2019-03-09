@@ -85,16 +85,19 @@ System level options
 ## Dependencies
 
 
-The following packages needs to be installed for the respective platforms.
-
-### macOS
-
-The following packages are easiest installed using HomeBrew:
+The following packages needs to be installed for the respective platforms:
 
 * pcre2
 * jemalloc
 
-### Notes on Git subtree
+### macOS
+
+The package dependencies are easiest installed using HomeBrew:
+```
+brew install pcre2 jemalloc
+```
+
+## Notes on Git subtree
 
 I've included the following two Github projects as sub-tree's into this
 repository:
