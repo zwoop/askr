@@ -18,6 +18,7 @@ askr_CPPFLAGS = \
         $(AM_CPPFLAGS) \
         -DASKR_VERSION=\"$(ASKR_VERSION_STRING)\" \
         -I$(abs_top_srcdir)/include \
+        -I$(abs_top_srcdir)/lib/gsl/include \
 		-I$(abs_top_srcdir)/lib/yaml-cpp/include
 
 askr_LDADD   = \

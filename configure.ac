@@ -116,7 +116,7 @@ AC_TYPE_UINT64_T
 # Do this later, because otherwise the library and function checks can fail oddly (due to e.g. -Werror)
 TS_ADDTO(CXXFLAGS, [-std=c++17 -pedantic -Wextra -Wall])
 TS_ADDTO(CFLAGS, [-std=c11 -Wall])
-TS_ADDTO(CPPFLAGS, [-D_GNU_SOURCE -I.. -I../gsl/include])
+TS_ADDTO(CPPFLAGS, [-D_GNU_SOURCE])
 
 # Genereated files
 AC_CONFIG_FILES([Makefile
