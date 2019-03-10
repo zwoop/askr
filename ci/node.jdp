@@ -38,7 +38,7 @@ node(node_name) {
 
     stage("build") {
         sh """
-        if [ "aarch64" == $(uname -m) ]; then
+        if [ "aarch64" == "`uname -m`" ]; then
             gmake -j2
         else
             gmake -j4
