@@ -32,7 +32,7 @@ node(node_name) {
     stage("configure") {
         sh """
         autoreconf -if
-        ./configure
+        ./configure --enable-ccache
         """
     }
 
