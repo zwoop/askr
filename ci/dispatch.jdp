@@ -24,6 +24,16 @@ pipeline {
                         build 'askr-master-fedora-29'
                     }
                 }
+                stage('Ubuntu 18') {
+                    steps {
+                        build 'askr-master-ubuntu-1804'
+                    }
+                }
+                stage('FreeBSD 12') {
+                    steps {
+                        build 'askr-master-freebsd-12'
+                    }
+                }
                 stage('macOS') {
                     steps {
                         build 'askr-master-macOS'
@@ -37,11 +47,6 @@ pipeline {
                 stage('arm64') {
                     steps {
                         build 'askr-master-arm64'
-                    }
-                }
-                stage('freebsd12') {
-                    steps {
-                        build 'askr-master-freebsd-12'
                     }
                 }
             }
