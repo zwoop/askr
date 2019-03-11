@@ -38,18 +38,18 @@ node(node_name) {
 
     stage("build") {
         sh """
-        if [ "aarch64" == "`uname -m`" ]; then
-            gmake -j2
+        if [ "aarch64" = "`uname -m`" ]; then
+            make -j2
         else
-            gmake -j4
+            make -j4
         fi
         """
     }
 
     stage("test") {
         sh """
-        gmake test
-        gmake distclean
+        make test
+        make distclean
         """
     }
 }
