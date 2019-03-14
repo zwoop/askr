@@ -48,14 +48,11 @@ TS_CONFIG_NICE([config.nice])
 
 # AC_PROG can sometimes mangle CFLAGS etc.
 # in particular, on Linux they insert -g -O2, here we preserve any user CFLAGS
-askr_saved_CFLAGS="${CFLAGS}"
-askr_saved_CXXFLAGS="${CXXFLAGS}"
+_askr_saved_CXXFLAGS="${CXXFLAGS}"
 
 AC_PROG_LIBTOOL
-AC_PROG_CC([clang cc gcc])
 AC_PROG_CXX([clang++ c++ g++])
 
-CFLAGS="${_askr_saved_CFLAGS}"
 CXXFLAGS="${_askr_saved_CXXFLAGS}"
 
 # Various tools needed
@@ -104,12 +101,10 @@ if test "x$enable_ccache" = "xyes"; then
 fi
 
 if test "x${enable_debug}" = "xyes"; then
-  TS_ADDTO(CFLAGS, [-g])
-  TS_ADDTO(CXXFLAGS, [-g])
-  TS_ADDTO(CPPFLAGS, [-DDEBUG -D_DEBUG])
+  TS_ADDTO(AM_CXXFLAGS, [-g])
+  TS_ADDTO(AM_CPPFLAGS, [-DDEBUG -D_DEBUG])
 else
-  TS_ADDTO(CFLAGS, [-O3])
-  TS_ADDTO(CXXFLAGS, [-O3])
+  TS_ADDTO(AM_CXXFLAGS, [-O3])
 fi
 
 # Checks for typedefs, structures, and compiler characteristics.
@@ -117,9 +112,12 @@ AC_TYPE_SIZE_T
 AC_TYPE_UINT64_T
 
 # Do this later, because otherwise the library and function checks can fail oddly (due to e.g. -Werror)
-TS_ADDTO(CXXFLAGS, [-std=c++17 -pedantic -Wextra -Wall])
-TS_ADDTO(CFLAGS, [-std=c11 -Wall])
-TS_ADDTO(CPPFLAGS, [-D_GNU_SOURCE])
+TS_ADDTO(AM_CXXFLAGS, [-std=c++17 -pedantic -Wextra -Wall])
+TS_ADDTO(AM_CPPFLAGS, [-D_GNU_SOURCE])
+
+AC_SUBST([AM_CPPFLAGS])
+AC_SUBST([AM_CXXFLAGS])
+AC_SUBST([AM_LDFLAGS])
 
 # Genereated files
 AC_CONFIG_FILES([Makefile
@@ -134,11 +132,11 @@ AC_OUTPUT
 
 # Produce a brief summary of how this build is being performed
 AC_MSG_NOTICE([Build option summary:
-    CC:                 $CC
     CXX:                $CXX
-    CFLAGS:             $CFLAGS
     CXXFLAGS:           $CXXFLAGS
     CPPFLAGS:           $CPPFLAGS
     LDFLAGS:            $LDFLAGS
-    LIBTOOL_LINK_FLAGS: $LIBTOOL_LINK_FLAGS
+    AM@&t@_CXXFLAGS:        $AM_CXXFLAGS
+    AM@&t@_CPPFLAGS:        $AM_CPPFLAGS
+    AM@&t@_LDFLAGS:         $AM_LDFLAGS
 ])
