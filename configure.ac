@@ -43,6 +43,9 @@ AH_TOP([
 # http://www.gnu.org/software/automake/manual/html_node/Automake-silent_002drules-Option.html
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
+# This has to come early, to preserver "user" input
+TS_CONFIG_NICE([config.nice])
+
 # AC_PROG can sometimes mangle CFLAGS etc.
 # in particular, on Linux they insert -g -O2, here we preserve any user CFLAGS
 askr_saved_CFLAGS="${CFLAGS}"
@@ -128,7 +131,6 @@ AC_CONFIG_FILES([Makefile
                  test/Makefile])
 
 AC_OUTPUT
-TS_CONFIG_NICE([config.nice])
 
 # Produce a brief summary of how this build is being performed
 AC_MSG_NOTICE([Build option summary:
