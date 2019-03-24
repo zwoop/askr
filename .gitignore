@@ -42,15 +42,6 @@
 *.idb
 *.pdb
 
-# Kernel Module Compile Results
-*.mod*
-*.cmd
-.tmp_versions/
-modules.order
-Module.symvers
-Mkfile.old
-dkms.conf
-
 # Various additions from me
 .vscode/
 .deps/
@@ -66,8 +57,6 @@ aclocal.m4
 autom4te.cache/
 build/_aux/
 build/libtool.m4
-build/ltargz.m4
-build/ltdl.m4
 build/ltoptions.m4
 build/ltsugar.m4
 build/ltversion.m4
