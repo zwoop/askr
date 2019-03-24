@@ -7,4 +7,4 @@ before_install:
 
 install: autoreconf -if
 
-script: ./configure && make -j4 && make test
+script: ./configure CXXFLAGS='-stdlib=libc++' && make -j4 && make test
