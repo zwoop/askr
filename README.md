@@ -8,7 +8,7 @@ for various jobs. A couple of key rules:
 * A script can use any number of filter plugins, which can be controlled via CL options
 * A script supports exactly one output module
 
-All plugins, at all stages, functions as piplines both within the processing stage, as well as between
+All plugins, at all stages, functions as pipelines both within the processing stage, as well as between
 stages. However, the order is always input plugin(s) -> filter plugin(s)-> output plugin(s).
 
 The tldr; is that the script describes how to parse the input, which filters to process the lines, and
@@ -19,7 +19,7 @@ how to present the output.
 ```
 #!/usr/bin/env askr
 #
-# The order of the sections does not matter, but evaluation always happens in a pipline ordering:
+# The order of the sections does not matter, but evaluation always happens in a pipeline ordering:
 #
 #    input -> filter(s) -> output
 #
@@ -43,7 +43,7 @@ input:
       rec-separator:
         - "\n"
 filter:
-  # Assures that lines from multiple files shows up in chronologic order after filtering
+  # Assures that lines from multiple files shows up in chronological order after filtering
   - plugin: ordered.so
     order:
       type: float
@@ -75,7 +75,7 @@ All askr scripts takes the following command line options:
 Query / filtering / output options (augmenting or overriding the script parameters)
   -e    Query expression, e.g. key1=val1
   -o    Output plugin to use, overriding the script default
-  -O    Output pkugin arguments (for -o plugin.so)
+  -O    Output plugin arguments (for -o plugin.so)
 
 System level options
   -t    Number of threads (defaults to max one thread per core)
