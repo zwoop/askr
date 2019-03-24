@@ -1,0 +1,8 @@
+dist: xenial
+language: cpp
+compiler: clang
+install: make get-deps libjemalloc-dev libpcre3-dev
+
+script:
+  - autoreconf -if
+  - ./configure && make -j4 && make test
