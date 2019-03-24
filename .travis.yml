@@ -4,7 +4,8 @@ compiler: clang
 
 before_install:
   - sudo apt-get install libjemalloc-dev libpcre3-dev
+  - find /usr/local -name string_view
 
 install: autoreconf -if
 
-script: ./configure CXXFLAGS='-stdlib=libc++' && make -j4 && make test
+script: CXXFLAGS='-stdlib=libc+' ./configure && make -j4 && make test
