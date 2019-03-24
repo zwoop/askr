@@ -1,0 +1,5 @@
+<map id="options.h" name="options.h">
+<area shape="rect" id="node1" title="Include file for our custom options processing / management." alt="" coords="47,5,122,31"/>
+<area shape="rect" id="node2" href="$askr_8cc.html" title="The main entry point for the askr command line / runtime application." alt="" coords="5,79,68,104"/>
+<area shape="rect" id="node3" href="$options_8cc.html" title="Implementation details for all the command line options management." alt="" coords="92,79,173,104"/>
+</map>

@@ -1,0 +1,6 @@
+<map id="askr.h" name="askr.h">
+<area shape="rect" id="node1" title="The public include file for the Key&#45;Value object." alt="" coords="56,5,113,31"/>
+<area shape="rect" id="node2" href="$options_8h.html" title="Include file for our custom options processing / management." alt="" coords="47,79,122,104"/>
+<area shape="rect" id="node3" href="$askr_8cc.html" title="The main entry point for the askr command line / runtime application." alt="" coords="5,152,68,177"/>
+<area shape="rect" id="node4" href="$options_8cc.html" title="Implementation details for all the command line options management." alt="" coords="92,152,173,177"/>
+</map>

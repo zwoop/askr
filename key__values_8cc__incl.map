@@ -1,0 +1,10 @@
+<map id="key_values.cc" name="key_values.cc">
+<area shape="rect" id="node1" title="The Key&#45;Value store object, primary input/output for plugins." alt="" coords="188,5,293,31"/>
+<area shape="rect" id="node2" href="$keyvals_8h.html" title="The public include file for the Key&#45;Value object." alt="" coords="187,79,293,104"/>
+<area shape="rect" id="node3" title=" " alt="" coords="5,152,75,177"/>
+<area shape="rect" id="node4" title=" " alt="" coords="99,152,187,177"/>
+<area shape="rect" id="node5" title=" " alt="" coords="211,152,269,177"/>
+<area shape="rect" id="node6" title=" " alt="" coords="293,152,408,177"/>
+<area shape="rect" id="node7" href="$buffers_8h.html" title="The public include file for the managed buffer (memory) class." alt="" coords="433,152,535,177"/>
+<area shape="rect" id="node8" title=" " alt="" coords="457,225,511,251"/>
+</map>
