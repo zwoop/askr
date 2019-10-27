@@ -108,6 +108,8 @@ Options::add_yaml(const YAML::Node &options)
 bool
 OptionValues::add(const std::string &key, const std::string &str)
 {
+    options_[key] = {str}; // ToDo: Need the parsing here...
+
     return true;
 }
 
