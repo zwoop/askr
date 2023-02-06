@@ -23,7 +23,9 @@ AM_CPPFLAGS = \
 noinst_LTLIBRARIES = libyaml-cpp.la
 
 libyaml_cpp_la_SOURCES = src/binary.cpp \
+src/binary.cpp \
 src/convert.cpp \
+src/depthguard.cpp \
 src/directives.cpp \
 src/emit.cpp \
 src/emitfromevents.cpp \
@@ -33,9 +35,9 @@ src/emitterutils.cpp \
 src/exceptions.cpp \
 src/exp.cpp \
 src/memory.cpp \
+src/nodebuilder.cpp \
 src/node.cpp \
 src/node_data.cpp \
-src/nodebuilder.cpp \
 src/nodeevents.cpp \
 src/null.cpp \
 src/ostream_wrapper.cpp \
