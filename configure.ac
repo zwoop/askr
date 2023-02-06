@@ -115,6 +115,19 @@ AC_TYPE_UINT64_T
 TS_ADDTO(AM_CXXFLAGS, [-std=c++17 -pedantic -Wextra -Wall])
 TS_ADDTO(AM_CPPFLAGS, [-D_GNU_SOURCE])
 
+case $host_os in
+  linux*)
+    host_os_def="linux"
+    ;;
+  darwin*)
+    host_os_def="darwin"
+    TS_ADDTO(AM_CXXFLAGS, [-I/opt/homebrew/include])
+    TS_ADDTO(AM_LDFLAGS, [-L/opt/homebrew/lib])
+    ;;
+  *)
+    ;;
+ esac
+
 AC_SUBST([AM_CPPFLAGS])
 AC_SUBST([AM_CXXFLAGS])
 AC_SUBST([AM_LDFLAGS])
