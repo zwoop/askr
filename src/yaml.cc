@@ -25,17 +25,17 @@
 
 namespace askr
 {
-namespace yaml
-{
+  namespace yaml
+  {
     void
     basic_validation(const YAML::Node &node, const std::vector<std::string> &validKeys)
     {
-        for (auto const &item : node) {
-            if (std::none_of(validKeys.begin(), validKeys.end(),
-                             [&item](std::string s) { return s == item.first.as<std::string>(); })) {
-                throw YAML::ParserException(item.Mark(), "unsupported key '" + item.first.as<std::string>() + "'");
-            }
+      for (auto const &item : node) {
+        if (std::none_of(validKeys.begin(), validKeys.end(),
+                         [&item](std::string s) { return s == item.first.as<std::string>(); })) {
+          throw YAML::ParserException(item.Mark(), "unsupported key '" + item.first.as<std::string>() + "'");
         }
+      }
     }
-} // namespace yaml
+  } // namespace yaml
 } // namespace askr
