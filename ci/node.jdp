@@ -38,8 +38,8 @@ node(node_name) {
 
     stage("build") {
         sh """
-        if [ "Linux" = $(uname -s) ]; then
-            make -j$(nproc)
+        if [ "Linux" = "`uname -s`" ]; then
+            make -j`nproc`
         else
             make -j4
         fi
