@@ -14,30 +14,22 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifdef _MSC_VER
-// blanket turn off warnings from CppCoreCheck from catch
-// so people aren't annoyed by them when running the tool.
-#pragma warning(disable : 26440 26426) // from catch
-#endif
+#include <array>         // for array
+#include <cstddef>       // for size_t
+#include <gsl/algorithm> // for copy
+#include <gsl/span>      // for span
+#include <gtest/gtest.h>
 
-#include <catch/catch.hpp> // for AssertionHandler, StringRef, CHECK, CHE...
+#include "deathTestCommon.h"
 
-#include <gsl/gsl_algorithm> // for copy
-#include <gsl/span>          // for span
-
-#include <array>   // for array
-#include <cstddef> // for size_t
-
-namespace gsl {
+namespace gsl
+{
 struct fail_fast;
-}  // namespace gsl
+} // namespace gsl
 
-using namespace std;
 using namespace gsl;
 
-GSL_SUPPRESS(bounds.4) // NO-FORMAT: attribute
-GSL_SUPPRESS(bounds.2) // NO-FORMAT: attribute
-TEST_CASE("same_type")
+TEST(algorithm_tests, same_type)
 {
     // dynamic source and destination span
     {
@@ -50,9 +42,10 @@ TEST_CASE("same_type")
         copy(src_span, dst_span);
         copy(src_span, dst_span.subspan(src_span.size()));
 
-        for (std::size_t i = 0; i < src.size(); ++i) {
-            CHECK(dst[i] == src[i]);
-            CHECK(dst[i + src.size()] == src[i]);
+        for (std::size_t i = 0; i < src.size(); ++i)
+        {
+            EXPECT_TRUE(dst[i] == src[i]);
+            EXPECT_TRUE(dst[i + src.size()] == src[i]);
         }
     }
 
@@ -67,9 +60,10 @@ TEST_CASE("same_type")
         copy(src_span, dst_span);
         copy(src_span, dst_span.subspan(src_span.size()));
 
-        for (std::size_t i = 0; i < src.size(); ++i) {
-            CHECK(dst[i] == src[i]);
-            CHECK(dst[i + src.size()] == src[i]);
+        for (std::size_t i = 0; i < src.size(); ++i)
+        {
+            EXPECT_TRUE(dst[i] == src[i]);
+            EXPECT_TRUE(dst[i + src.size()] == src[i]);
         }
     }
 
@@ -78,15 +72,16 @@ TEST_CASE("same_type")
         std::array<int, 5> src{1, 2, 3, 4, 5};
         std::array<int, 10> dst{};
 
-        const span<int> src_span(src);
-        const span<int, 10> dst_span(dst);
+        const gsl::span<int> src_span(src);
+        const gsl::span<int, 10> dst_span(dst);
 
         copy(src_span, dst_span);
         copy(src_span, dst_span.subspan(src_span.size()));
 
-        for (std::size_t i = 0; i < src.size(); ++i) {
-            CHECK(dst[i] == src[i]);
-            CHECK(dst[i + src.size()] == src[i]);
+        for (std::size_t i = 0; i < src.size(); ++i)
+        {
+            EXPECT_TRUE(dst[i] == src[i]);
+            EXPECT_TRUE(dst[i + src.size()] == src[i]);
         }
     }
 
@@ -101,17 +96,15 @@ TEST_CASE("same_type")
         copy(src_span, dst_span);
         copy(src_span, dst_span.subspan(src_span.size()));
 
-        for (std::size_t i = 0; i < src.size(); ++i) {
-            CHECK(dst[i] == src[i]);
-            CHECK(dst[i + src.size()] == src[i]);
+        for (std::size_t i = 0; i < src.size(); ++i)
+        {
+            EXPECT_TRUE(dst[i] == src[i]);
+            EXPECT_TRUE(dst[i + src.size()] == src[i]);
         }
     }
 }
 
-
-GSL_SUPPRESS(bounds.4) // NO-FORMAT: attribute
-GSL_SUPPRESS(bounds.2) // NO-FORMAT: attribute
-TEST_CASE("compatible_type")
+TEST(algorithm_tests, compatible_type)
 {
     // dynamic source and destination span
     {
@@ -124,9 +117,10 @@ TEST_CASE("compatible_type")
         copy(src_span, dst_span);
         copy(src_span, dst_span.subspan(src_span.size()));
 
-        for (std::size_t i = 0; i < src.size(); ++i) {
-            CHECK(dst[i] == src[i]);
-            CHECK(dst[i + src.size()] == src[i]);
+        for (std::size_t i = 0; i < src.size(); ++i)
+        {
+            EXPECT_TRUE(dst[i] == src[i]);
+            EXPECT_TRUE(dst[i + src.size()] == src[i]);
         }
     }
 
@@ -141,9 +135,10 @@ TEST_CASE("compatible_type")
         copy(src_span, dst_span);
         copy(src_span, dst_span.subspan(src_span.size()));
 
-        for (std::size_t i = 0; i < src.size(); ++i) {
-            CHECK(dst[i] == src[i]);
-            CHECK(dst[i + src.size()] == src[i]);
+        for (std::size_t i = 0; i < src.size(); ++i)
+        {
+            EXPECT_TRUE(dst[i] == src[i]);
+            EXPECT_TRUE(dst[i + src.size()] == src[i]);
         }
     }
 
@@ -158,9 +153,10 @@ TEST_CASE("compatible_type")
         copy(src_span, dst_span);
         copy(src_span, dst_span.subspan(src_span.size()));
 
-        for (std::size_t i = 0; i < src.size(); ++i) {
-            CHECK(dst[i] == src[i]);
-            CHECK(dst[i + src.size()] == src[i]);
+        for (std::size_t i = 0; i < src.size(); ++i)
+        {
+            EXPECT_TRUE(dst[i] == src[i]);
+            EXPECT_TRUE(dst[i + src.size()] == src[i]);
         }
     }
 
@@ -175,15 +171,16 @@ TEST_CASE("compatible_type")
         copy(src_span, dst_span);
         copy(src_span, dst_span.subspan(src_span.size()));
 
-        for (std::size_t i = 0; i < src.size(); ++i) {
-            CHECK(dst[i] == src[i]);
-            CHECK(dst[i + src.size()] == src[i]);
+        for (std::size_t i = 0; i < src.size(); ++i)
+        {
+            EXPECT_TRUE(dst[i] == src[i]);
+            EXPECT_TRUE(dst[i + src.size()] == src[i]);
         }
     }
 }
 
 #ifdef CONFIRM_COMPILATION_ERRORS
-TEST_CASE("incompatible_type")
+TEST(algorithm_tests, incompatible_type)
 {
     std::array<int, 4> src{1, 2, 3, 4};
     std::array<int*, 12> dst{};
@@ -201,8 +198,14 @@ TEST_CASE("incompatible_type")
 }
 #endif
 
-TEST_CASE("small_destination_span")
+TEST(algorithm_tests, small_destination_span)
 {
+    const auto terminateHandler = std::set_terminate([] {
+        std::cerr << "Expected Death. small_destination_span";
+        std::abort();
+    });
+    const auto expected = GetExpectedDeathString(terminateHandler);
+
     std::array<int, 12> src{1, 2, 3, 4};
     std::array<int, 4> dst{};
 
@@ -211,9 +214,9 @@ TEST_CASE("small_destination_span")
     const span<int> dst_span_dyn(dst);
     const span<int, 4> dst_span_static(dst);
 
-    CHECK_THROWS_AS(copy(src_span_dyn, dst_span_dyn), fail_fast);
-    CHECK_THROWS_AS(copy(src_span_dyn, dst_span_static), fail_fast);
-    CHECK_THROWS_AS(copy(src_span_static, dst_span_dyn), fail_fast);
+    EXPECT_DEATH(copy(src_span_dyn, dst_span_dyn), expected);
+    EXPECT_DEATH(copy(src_span_dyn, dst_span_static), expected);
+    EXPECT_DEATH(copy(src_span_static, dst_span_dyn), expected);
 
 #ifdef CONFIRM_COMPILATION_ERRORS
     copy(src_span_static, dst_span_static);

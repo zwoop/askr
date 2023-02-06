@@ -14,8 +14,11 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+#include <chrono>
 #include <cstdlib>  // for std::exit
 #include <gsl/span> // for span
+#include <iostream>
+#include <thread>
 
 int operator_subscript_no_throw() noexcept
 {
@@ -28,7 +31,7 @@ int operator_subscript_no_throw() noexcept
 
 void setup_termination_handler() noexcept
 {
-#if defined(_MSC_VER)
+#if defined(GSL_MSVC_USE_STL_NOEXCEPTION_WORKAROUND)
 
     auto& handler = gsl::details::get_terminate_handler();
     handler = &test_terminate;
@@ -42,6 +45,10 @@ void setup_termination_handler() noexcept
 
 int main() noexcept
 {
+    std::cout << "Running main() from " __FILE__ "\n";
+#if defined(IOS_PROCESS_DELAY_WORKAROUND)
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+#endif
     setup_termination_handler();
     operator_subscript_no_throw();
     return -1;

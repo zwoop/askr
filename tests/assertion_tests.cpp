@@ -14,28 +14,19 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifdef _MSC_VER
-// blanket turn off warnings from CppCoreCheck from catch
-// so people aren't annoyed by them when running the tool.
-#pragma warning(disable : 26440 26426) // from catch
-#endif
-
-#include <catch/catch.hpp> // for AssertionHandler, StringRef, CHECK, CHECK...
-
-#include <gsl/gsl_assert> // for fail_fast (ptr only), Ensures, Expects
+#include "deathTestCommon.h"
+#include <gsl/assert> // for fail_fast (ptr only), Ensures, Expects
+#include <gtest/gtest.h>
 
 using namespace gsl;
+
+namespace
+{
 
 int f(int i)
 {
     Expects(i > 0 && i < 10);
     return i;
-}
-
-TEST_CASE("expects")
-{
-    CHECK(f(2) == 2);
-    CHECK_THROWS_AS(f(10), fail_fast);
 }
 
 int g(int i)
@@ -44,9 +35,26 @@ int g(int i)
     Ensures(i > 0 && i < 10);
     return i;
 }
+} // namespace
 
-TEST_CASE("ensures")
+TEST(assertion_tests, expects)
 {
-    CHECK(g(2) == 3);
-    CHECK_THROWS_AS(g(9), fail_fast);
+    const auto terminateHandler = std::set_terminate([] {
+        std::cerr << "Expected Death. expects";
+        std::abort();
+    });
+
+    EXPECT_TRUE(f(2) == 2);
+    EXPECT_DEATH(f(10), GetExpectedDeathString(terminateHandler));
+}
+
+TEST(assertion_tests, ensures)
+{
+    const auto terminateHandler = std::set_terminate([] {
+        std::cerr << "Expected Death. ensures";
+        std::abort();
+    });
+
+    EXPECT_TRUE(g(2) == 3);
+    EXPECT_DEATH(g(9), GetExpectedDeathString(terminateHandler));
 }

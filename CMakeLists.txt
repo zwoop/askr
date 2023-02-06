@@ -1,94 +1,61 @@
-cmake_minimum_required(VERSION 3.1.3)
+cmake_minimum_required(VERSION 3.1.3...3.16)
 
-project(GSL CXX)
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
+include(guidelineSupportLibrary)
 
-include(ExternalProject)
-find_package(Git)
+project(GSL
+    VERSION 4.0.0
+    LANGUAGES CXX
+)
 
-# creates a library GSL which is an interface (header files only)
+# Must include after the project call due to GNUInstallDirs requiring a language be enabled (IE. CXX)
+include(GNUInstallDirs)
+
+# Creates a library GSL which is an interface (header files only)
 add_library(GSL INTERFACE)
 
-# determine whether this is a standalone project or included by other projects
+# NOTE: If you want to use GSL prefer to link against GSL using this alias target
+# EX:
+#   target_link_libraries(foobar PRIVATE Microsoft.GSL::GSL)
+#
+# Add Microsoft.GSL::GSL alias for GSL so that dependents can be agnostic about
+# whether GSL was added via `add_subdirectory` or `find_package`
+add_library(Microsoft.GSL::GSL ALIAS GSL)
+
+# Determine whether this is a standalone project or included by other projects
 set(GSL_STANDALONE_PROJECT OFF)
 if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
-  set(GSL_STANDALONE_PROJECT ON)
-endif ()
+    set(GSL_STANDALONE_PROJECT ON)
+endif()
 
-set(GSL_CXX_STANDARD "14" CACHE STRING "Use c++ standard")
-set(GSL_CXX_STD "cxx_std_${GSL_CXX_STANDARD}")
+### Project options
+option(GSL_INSTALL "Generate and install GSL target" ${GSL_STANDALONE_PROJECT})
+option(GSL_TEST "Build and perform GSL tests" ${GSL_STANDALONE_PROJECT})
 
-if (MSVC)
-    set(GSL_CXX_STD_OPT "-std:c++${GSL_CXX_STANDARD}")
+# This GSL implementation generally assumes a platform that implements C++14 support.
+set(gsl_min_cxx_standard "14")
+
+if (GSL_STANDALONE_PROJECT)
+    gsl_set_default_cxx_standard(${gsl_min_cxx_standard})
 else()
-    set(GSL_CXX_STD_OPT "-std=c++${GSL_CXX_STANDARD}")
+    gsl_client_set_cxx_standard(${gsl_min_cxx_standard})
 endif()
 
-# when minimum version required is 3.8.0 remove if below
-# both branches do exactly the same thing
-if (CMAKE_VERSION VERSION_LESS 3.7.9)
-    include(CheckCXXCompilerFlag)
-    CHECK_CXX_COMPILER_FLAG("${GSL_CXX_STD_OPT}" COMPILER_SUPPORTS_CXX_STANDARD)
+# Setup include directory
+add_subdirectory(include)
 
-    if(COMPILER_SUPPORTS_CXX_STANDARD)
-        target_compile_options(GSL INTERFACE "${GSL_CXX_STD_OPT}")
-    else()
-        message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no c++${GSL_CXX_STANDARD} support. Please use a different C++ compiler.")
-    endif()
-else ()
-    target_compile_features(GSL INTERFACE "${GSL_CXX_STD}")
-    # on *nix systems force the use of -std=c++XX instead of -std=gnu++XX (default)
-    set(CMAKE_CXX_EXTENSIONS OFF)
+# Add natvis file
+gsl_add_native_visualizer_support()
+
+# Add packaging support
+gsl_create_packaging_file()
+
+if (GSL_INSTALL)
+    # Setup install/export logic
+    gsl_install_logic()
 endif()
 
-# add definitions to the library and targets that consume it
-target_compile_definitions(GSL INTERFACE
-    $<$<CXX_COMPILER_ID:MSVC>:
-        # remove unnecessary warnings about unchecked iterators
-        _SCL_SECURE_NO_WARNINGS
-        # remove deprecation warnings about std::uncaught_exception() (from catch)
-        _SILENCE_CXX17_UNCAUGHT_EXCEPTION_DEPRECATION_WARNING
-    >
-)
-
-# add include folders to the library and targets that consume it
-# the SYSTEM keyword suppresses warnings for users of the library
-if(GSL_STANDALONE_PROJECT)
-    target_include_directories(GSL INTERFACE
-        $<BUILD_INTERFACE:
-            ${CMAKE_CURRENT_SOURCE_DIR}/include
-        >
-    )
-else()
-    target_include_directories(GSL SYSTEM INTERFACE
-        $<BUILD_INTERFACE:
-            ${CMAKE_CURRENT_SOURCE_DIR}/include
-        >
-    )
-endif()
-
-
-if (CMAKE_VERSION VERSION_GREATER 3.7.8)
-    if (MSVC_IDE)
-        option(VS_ADD_NATIVE_VISUALIZERS "Configure project to use Visual Studio native visualizers" TRUE)
-    else()
-        set(VS_ADD_NATIVE_VISUALIZERS FALSE CACHE INTERNAL "Native visualizers are Visual Studio extension" FORCE)
-    endif()
-
-    # add natvis file to the library so it will automatically be loaded into Visual Studio
-    if(VS_ADD_NATIVE_VISUALIZERS)
-        target_sources(GSL INTERFACE
-            ${CMAKE_CURRENT_SOURCE_DIR}/GSL.natvis
-        )
-    endif()
-endif()
-
-install(
-    DIRECTORY include/gsl
-    DESTINATION include
-)
-
-option(GSL_TEST "Generate tests." ${GSL_STANDALONE_PROJECT})
 if (GSL_TEST)
-	enable_testing()
-	add_subdirectory(tests)
-endif ()
+    enable_testing()
+    add_subdirectory(tests)
+endif()

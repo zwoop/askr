@@ -14,16 +14,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifdef _MSC_VER
-// blanket turn off warnings from CppCoreCheck from catch
-// so people aren't annoyed by them when running the tool.
-#pragma warning(disable : 26440 26426) // from catch
-
-// Fix VS2015 build breaks in Release
-#pragma warning(disable : 4702) // unreachable code
-#endif
-
-#include <catch/catch.hpp> // for AssertionHandler, StringRef, CHECK, TEST_...
+#include <gtest/gtest.h>
 
 #include <gsl/pointers> // for not_null, operator<, operator<=, operator>
 
@@ -34,11 +25,7 @@
 #include <string>    // for basic_string, operator==, string, operator<<
 #include <typeinfo>  // for type_info
 
-namespace gsl
-{
-struct fail_fast;
-} // namespace gsl
-
+#include "deathTestCommon.h"
 using namespace gsl;
 
 struct MyBase
@@ -73,7 +60,9 @@ struct CustomPtr
 template <typename T, typename U>
 std::string operator==(CustomPtr<T> const& lhs, CustomPtr<U> const& rhs)
 {
+    // clang-format off
     GSL_SUPPRESS(type.1) // NO-FORMAT: attribute
+    // clang-format on
     return reinterpret_cast<const void*>(lhs.p_) == reinterpret_cast<const void*>(rhs.p_) ? "true"
                                                                                           : "false";
 }
@@ -81,7 +70,9 @@ std::string operator==(CustomPtr<T> const& lhs, CustomPtr<U> const& rhs)
 template <typename T, typename U>
 std::string operator!=(CustomPtr<T> const& lhs, CustomPtr<U> const& rhs)
 {
+    // clang-format off
     GSL_SUPPRESS(type.1) // NO-FORMAT: attribute
+    // clang-format on
     return reinterpret_cast<const void*>(lhs.p_) != reinterpret_cast<const void*>(rhs.p_) ? "true"
                                                                                           : "false";
 }
@@ -89,7 +80,9 @@ std::string operator!=(CustomPtr<T> const& lhs, CustomPtr<U> const& rhs)
 template <typename T, typename U>
 std::string operator<(CustomPtr<T> const& lhs, CustomPtr<U> const& rhs)
 {
+    // clang-format off
     GSL_SUPPRESS(type.1) // NO-FORMAT: attribute
+    // clang-format on
     return reinterpret_cast<const void*>(lhs.p_) < reinterpret_cast<const void*>(rhs.p_) ? "true"
                                                                                          : "false";
 }
@@ -97,7 +90,9 @@ std::string operator<(CustomPtr<T> const& lhs, CustomPtr<U> const& rhs)
 template <typename T, typename U>
 std::string operator>(CustomPtr<T> const& lhs, CustomPtr<U> const& rhs)
 {
+    // clang-format off
     GSL_SUPPRESS(type.1) // NO-FORMAT: attribute
+    // clang-format on
     return reinterpret_cast<const void*>(lhs.p_) > reinterpret_cast<const void*>(rhs.p_) ? "true"
                                                                                          : "false";
 }
@@ -105,7 +100,9 @@ std::string operator>(CustomPtr<T> const& lhs, CustomPtr<U> const& rhs)
 template <typename T, typename U>
 std::string operator<=(CustomPtr<T> const& lhs, CustomPtr<U> const& rhs)
 {
+    // clang-format off
     GSL_SUPPRESS(type.1) // NO-FORMAT: attribute
+    // clang-format on
     return reinterpret_cast<const void*>(lhs.p_) <= reinterpret_cast<const void*>(rhs.p_) ? "true"
                                                                                           : "false";
 }
@@ -113,7 +110,9 @@ std::string operator<=(CustomPtr<T> const& lhs, CustomPtr<U> const& rhs)
 template <typename T, typename U>
 std::string operator>=(CustomPtr<T> const& lhs, CustomPtr<U> const& rhs)
 {
+    // clang-format off
     GSL_SUPPRESS(type.1) // NO-FORMAT: attribute
+    // clang-format on
     return reinterpret_cast<const void*>(lhs.p_) >= reinterpret_cast<const void*>(rhs.p_) ? "true"
                                                                                           : "false";
 }
@@ -127,16 +126,21 @@ struct NonCopyableNonMovable
     NonCopyableNonMovable& operator=(NonCopyableNonMovable&&) = delete;
 };
 
-GSL_SUPPRESS(f.4) // NO-FORMAT: attribute
+namespace
+{
+// clang-format off
+GSL_SUPPRESS(f .4) // NO-FORMAT: attribute
+// clang-format on
 bool helper(not_null<int*> p) { return *p == 12; }
-GSL_SUPPRESS(f.4) // NO-FORMAT: attribute
+// clang-format off
+GSL_SUPPRESS(f .4) // NO-FORMAT: attribute
+// clang-format on
 bool helper_const(not_null<const int*> p) { return *p == 12; }
 
 int* return_pointer() { return nullptr; }
-const int* return_pointer_const() { return nullptr; }
+} // namespace
 
-GSL_SUPPRESS(con.4) // NO-FORMAT: attribute
-TEST_CASE("TestNotNullConstructors")
+TEST(notnull_tests, TestNotNullConstructors)
 {
     {
 #ifdef CONFIRM_COMPILATION_ERRORS
@@ -153,18 +157,24 @@ TEST_CASE("TestNotNullConstructors")
 #endif
     }
 
+    const auto terminateHandler = std::set_terminate([] {
+        std::cerr << "Expected Death. TestNotNullConstructors";
+        std::abort();
+    });
+    const auto expected = GetExpectedDeathString(terminateHandler);
+
     {
         // from shared pointer
         int i = 12;
         auto rp = RefCounted<int>(&i);
         not_null<int*> p(rp);
-        CHECK(p.get() == &i);
+        EXPECT_TRUE(p.get() == &i);
 
         not_null<std::shared_ptr<int>> x(
             std::make_shared<int>(10)); // shared_ptr<int> is nullptr assignable
 
         int* pi = nullptr;
-        CHECK_THROWS_AS(not_null<decltype(pi)>(pi), fail_fast);
+        EXPECT_DEATH((not_null<decltype(pi)>(pi)), expected);
     }
 
     {
@@ -175,7 +185,7 @@ TEST_CASE("TestNotNullConstructors")
         helper(&t);
         helper_const(&t);
 
-        CHECK(*x == 42);
+        EXPECT_TRUE(*x == 42);
     }
 
     {
@@ -191,7 +201,7 @@ TEST_CASE("TestNotNullConstructors")
         helper(x);
         helper_const(x);
 
-        CHECK(*x == 42);
+        EXPECT_TRUE(*x == 42);
     }
 
     {
@@ -205,7 +215,7 @@ TEST_CASE("TestNotNullConstructors")
         helper_const(cp);
         helper_const(x);
 
-        CHECK(*x == 42);
+        EXPECT_TRUE(*x == 42);
     }
 
     {
@@ -215,39 +225,38 @@ TEST_CASE("TestNotNullConstructors")
 
         auto x = not_null<const int*>{cp};
 
-        CHECK(*x == 42);
+        EXPECT_TRUE(*x == 42);
     }
 
     {
         // from returned pointer
 
-        CHECK_THROWS_AS(helper(return_pointer()), fail_fast);
-        CHECK_THROWS_AS(helper_const(return_pointer()), fail_fast);
+        EXPECT_DEATH(helper(return_pointer()), expected);
+        EXPECT_DEATH(helper_const(return_pointer()), expected);
     }
 }
 
 template <typename T>
-GSL_SUPPRESS(con.4) // NO-FORMAT: attribute
 void ostream_helper(T v)
 {
     not_null<T*> p(&v);
     {
         std::ostringstream os;
         std::ostringstream ref;
-        os << p;
-        ref << &v;
-        CHECK(os.str() == ref.str());
+        os << static_cast<void*>(p);
+        ref << static_cast<void*>(&v);
+        EXPECT_TRUE(os.str() == ref.str());
     }
     {
         std::ostringstream os;
         std::ostringstream ref;
         os << *p;
         ref << v;
-        CHECK(os.str() == ref.str());
+        EXPECT_TRUE(os.str() == ref.str());
     }
 }
 
-TEST_CASE("TestNotNullostream")
+TEST(notnull_tests, TestNotNullostream)
 {
     ostream_helper<int>(17);
     ostream_helper<float>(21.5f);
@@ -258,9 +267,7 @@ TEST_CASE("TestNotNullostream")
     ostream_helper<std::string>("string");
 }
 
-GSL_SUPPRESS(type.1) // NO-FORMAT: attribute
-GSL_SUPPRESS(con.4) // NO-FORMAT: attribute
-TEST_CASE("TestNotNullCasting")
+TEST(notnull_tests, TestNotNullCasting)
 {
     MyBase base;
     MyDerived derived;
@@ -270,7 +277,7 @@ TEST_CASE("TestNotNullCasting")
     not_null<MyDerived*> p{&derived};
     not_null<MyBase*> q(&base);
     q = p; // allowed with heterogeneous copy ctor
-    CHECK(q == p);
+    EXPECT_TRUE(q == p);
 
 #ifdef CONFIRM_COMPILATION_ERRORS
     q = u; // no viable conversion possible between MyBase* and Unrelated*
@@ -280,20 +287,26 @@ TEST_CASE("TestNotNullCasting")
     not_null<Unrelated*> s = reinterpret_cast<Unrelated*>(p);
 #endif
     not_null<Unrelated*> t(reinterpret_cast<Unrelated*>(p.get()));
-    CHECK(reinterpret_cast<void*>(p.get()) == reinterpret_cast<void*>(t.get()));
+    EXPECT_TRUE(reinterpret_cast<void*>(p.get()) == reinterpret_cast<void*>(t.get()));
 }
 
-TEST_CASE("TestNotNullAssignment")
+TEST(notnull_tests, TestNotNullAssignment)
 {
+    const auto terminateHandler = std::set_terminate([] {
+        std::cerr << "Expected Death. TestNotNullAssignmentd";
+        std::abort();
+    });
+    const auto expected = GetExpectedDeathString(terminateHandler);
+
     int i = 12;
     not_null<int*> p(&i);
-    CHECK(helper(p));
+    EXPECT_TRUE(helper(p));
 
     int* q = nullptr;
-    CHECK_THROWS_AS(p = not_null<int*>(q), fail_fast);
+    EXPECT_DEATH(p = not_null<int*>(q), expected);
 }
 
-TEST_CASE("TestNotNullRawPointerComparison")
+TEST(notnull_tests, TestNotNullRawPointerComparison)
 {
     int ints[2] = {42, 43};
     int* p1 = &ints[0];
@@ -302,34 +315,33 @@ TEST_CASE("TestNotNullRawPointerComparison")
     using NotNull1 = not_null<decltype(p1)>;
     using NotNull2 = not_null<decltype(p2)>;
 
-    CHECK((NotNull1(p1) == NotNull1(p1)) == true);
-    CHECK((NotNull1(p1) == NotNull2(p2)) == false);
+    EXPECT_TRUE((NotNull1(p1) == NotNull1(p1)) == true);
+    EXPECT_TRUE((NotNull1(p1) == NotNull2(p2)) == false);
 
-    CHECK((NotNull1(p1) != NotNull1(p1)) == false);
-    CHECK((NotNull1(p1) != NotNull2(p2)) == true);
+    EXPECT_TRUE((NotNull1(p1) != NotNull1(p1)) == false);
+    EXPECT_TRUE((NotNull1(p1) != NotNull2(p2)) == true);
 
-    CHECK((NotNull1(p1) < NotNull1(p1)) == false);
-    CHECK((NotNull1(p1) < NotNull2(p2)) == (p1 < p2));
-    CHECK((NotNull2(p2) < NotNull1(p1)) == (p2 < p1));
+    EXPECT_TRUE((NotNull1(p1) < NotNull1(p1)) == false);
+    EXPECT_TRUE((NotNull1(p1) < NotNull2(p2)) == (p1 < p2));
+    EXPECT_TRUE((NotNull2(p2) < NotNull1(p1)) == (p2 < p1));
 
-    CHECK((NotNull1(p1) > NotNull1(p1)) == false);
-    CHECK((NotNull1(p1) > NotNull2(p2)) == (p1 > p2));
-    CHECK((NotNull2(p2) > NotNull1(p1)) == (p2 > p1));
+    EXPECT_TRUE((NotNull1(p1) > NotNull1(p1)) == false);
+    EXPECT_TRUE((NotNull1(p1) > NotNull2(p2)) == (p1 > p2));
+    EXPECT_TRUE((NotNull2(p2) > NotNull1(p1)) == (p2 > p1));
 
-    CHECK((NotNull1(p1) <= NotNull1(p1)) == true);
-    CHECK((NotNull1(p1) <= NotNull2(p2)) == (p1 <= p2));
-    CHECK((NotNull2(p2) <= NotNull1(p1)) == (p2 <= p1));
+    EXPECT_TRUE((NotNull1(p1) <= NotNull1(p1)) == true);
+    EXPECT_TRUE((NotNull1(p1) <= NotNull2(p2)) == (p1 <= p2));
+    EXPECT_TRUE((NotNull2(p2) <= NotNull1(p1)) == (p2 <= p1));
 }
 
-GSL_SUPPRESS(con.4) // NO-FORMAT: attribute
-TEST_CASE("TestNotNullDereferenceOperator")
+TEST(notnull_tests, TestNotNullDereferenceOperator)
 {
     {
         auto sp1 = std::make_shared<NonCopyableNonMovable>();
 
         using NotNullSp1 = not_null<decltype(sp1)>;
-        CHECK(typeid(*sp1) == typeid(*NotNullSp1(sp1)));
-        CHECK(std::addressof(*NotNullSp1(sp1)) == std::addressof(*sp1));
+        EXPECT_TRUE(typeid(*sp1) == typeid(*NotNullSp1(sp1)));
+        EXPECT_TRUE(std::addressof(*NotNullSp1(sp1)) == std::addressof(*sp1));
     }
 
     {
@@ -337,22 +349,22 @@ TEST_CASE("TestNotNullDereferenceOperator")
         CustomPtr<int> p1(&ints[0]);
 
         using NotNull1 = not_null<decltype(p1)>;
-        CHECK(typeid(*NotNull1(p1)) == typeid(*p1));
-        CHECK(*NotNull1(p1) == 42);
+        EXPECT_TRUE(typeid(*NotNull1(p1)) == typeid(*p1));
+        EXPECT_TRUE(*NotNull1(p1) == 42);
         *NotNull1(p1) = 43;
-        CHECK(ints[0] == 43);
+        EXPECT_TRUE(ints[0] == 43);
     }
 
     {
         int v = 42;
         gsl::not_null<int*> p(&v);
-        CHECK(typeid(*p) == typeid(*(&v)));
+        EXPECT_TRUE(typeid(*p) == typeid(*(&v)));
         *p = 43;
-        CHECK(v == 43);
+        EXPECT_TRUE(v == 43);
     }
 }
 
-TEST_CASE("TestNotNullSharedPtrComparison")
+TEST(notnull_tests, TestNotNullSharedPtrComparison)
 {
     auto sp1 = std::make_shared<int>(42);
     auto sp2 = std::make_shared<const int>(43);
@@ -360,31 +372,30 @@ TEST_CASE("TestNotNullSharedPtrComparison")
     using NotNullSp1 = not_null<decltype(sp1)>;
     using NotNullSp2 = not_null<decltype(sp2)>;
 
-    CHECK((NotNullSp1(sp1) == NotNullSp1(sp1)) == true);
-    CHECK((NotNullSp1(sp1) == NotNullSp2(sp2)) == false);
+    EXPECT_TRUE((NotNullSp1(sp1) == NotNullSp1(sp1)) == true);
+    EXPECT_TRUE((NotNullSp1(sp1) == NotNullSp2(sp2)) == false);
 
-    CHECK((NotNullSp1(sp1) != NotNullSp1(sp1)) == false);
-    CHECK((NotNullSp1(sp1) != NotNullSp2(sp2)) == true);
+    EXPECT_TRUE((NotNullSp1(sp1) != NotNullSp1(sp1)) == false);
+    EXPECT_TRUE((NotNullSp1(sp1) != NotNullSp2(sp2)) == true);
 
-    CHECK((NotNullSp1(sp1) < NotNullSp1(sp1)) == false);
-    CHECK((NotNullSp1(sp1) < NotNullSp2(sp2)) == (sp1 < sp2));
-    CHECK((NotNullSp2(sp2) < NotNullSp1(sp1)) == (sp2 < sp1));
+    EXPECT_TRUE((NotNullSp1(sp1) < NotNullSp1(sp1)) == false);
+    EXPECT_TRUE((NotNullSp1(sp1) < NotNullSp2(sp2)) == (sp1 < sp2));
+    EXPECT_TRUE((NotNullSp2(sp2) < NotNullSp1(sp1)) == (sp2 < sp1));
 
-    CHECK((NotNullSp1(sp1) > NotNullSp1(sp1)) == false);
-    CHECK((NotNullSp1(sp1) > NotNullSp2(sp2)) == (sp1 > sp2));
-    CHECK((NotNullSp2(sp2) > NotNullSp1(sp1)) == (sp2 > sp1));
+    EXPECT_TRUE((NotNullSp1(sp1) > NotNullSp1(sp1)) == false);
+    EXPECT_TRUE((NotNullSp1(sp1) > NotNullSp2(sp2)) == (sp1 > sp2));
+    EXPECT_TRUE((NotNullSp2(sp2) > NotNullSp1(sp1)) == (sp2 > sp1));
 
-    CHECK((NotNullSp1(sp1) <= NotNullSp1(sp1)) == true);
-    CHECK((NotNullSp1(sp1) <= NotNullSp2(sp2)) == (sp1 <= sp2));
-    CHECK((NotNullSp2(sp2) <= NotNullSp1(sp1)) == (sp2 <= sp1));
+    EXPECT_TRUE((NotNullSp1(sp1) <= NotNullSp1(sp1)) == true);
+    EXPECT_TRUE((NotNullSp1(sp1) <= NotNullSp2(sp2)) == (sp1 <= sp2));
+    EXPECT_TRUE((NotNullSp2(sp2) <= NotNullSp1(sp1)) == (sp2 <= sp1));
 
-    CHECK((NotNullSp1(sp1) >= NotNullSp1(sp1)) == true);
-    CHECK((NotNullSp1(sp1) >= NotNullSp2(sp2)) == (sp1 >= sp2));
-    CHECK((NotNullSp2(sp2) >= NotNullSp1(sp1)) == (sp2 >= sp1));
+    EXPECT_TRUE((NotNullSp1(sp1) >= NotNullSp1(sp1)) == true);
+    EXPECT_TRUE((NotNullSp1(sp1) >= NotNullSp2(sp2)) == (sp1 >= sp2));
+    EXPECT_TRUE((NotNullSp2(sp2) >= NotNullSp1(sp1)) == (sp2 >= sp1));
 }
 
-GSL_SUPPRESS(con.4) // NO-FORMAT: attribute
-TEST_CASE("TestNotNullCustomPtrComparison")
+TEST(notnull_tests, TestNotNullCustomPtrComparison)
 {
     int ints[2] = {42, 43};
     CustomPtr<int> p1(&ints[0]);
@@ -393,33 +404,32 @@ TEST_CASE("TestNotNullCustomPtrComparison")
     using NotNull1 = not_null<decltype(p1)>;
     using NotNull2 = not_null<decltype(p2)>;
 
-    CHECK((NotNull1(p1) == NotNull1(p1)) == "true");
-    CHECK((NotNull1(p1) == NotNull2(p2)) == "false");
+    EXPECT_TRUE((NotNull1(p1) == NotNull1(p1)) == "true");
+    EXPECT_TRUE((NotNull1(p1) == NotNull2(p2)) == "false");
 
-    CHECK((NotNull1(p1) != NotNull1(p1)) == "false");
-    CHECK((NotNull1(p1) != NotNull2(p2)) == "true");
+    EXPECT_TRUE((NotNull1(p1) != NotNull1(p1)) == "false");
+    EXPECT_TRUE((NotNull1(p1) != NotNull2(p2)) == "true");
 
-    CHECK((NotNull1(p1) < NotNull1(p1)) == "false");
-    CHECK((NotNull1(p1) < NotNull2(p2)) == (p1 < p2));
-    CHECK((NotNull2(p2) < NotNull1(p1)) == (p2 < p1));
+    EXPECT_TRUE((NotNull1(p1) < NotNull1(p1)) == "false");
+    EXPECT_TRUE((NotNull1(p1) < NotNull2(p2)) == (p1 < p2));
+    EXPECT_TRUE((NotNull2(p2) < NotNull1(p1)) == (p2 < p1));
 
-    CHECK((NotNull1(p1) > NotNull1(p1)) == "false");
-    CHECK((NotNull1(p1) > NotNull2(p2)) == (p1 > p2));
-    CHECK((NotNull2(p2) > NotNull1(p1)) == (p2 > p1));
+    EXPECT_TRUE((NotNull1(p1) > NotNull1(p1)) == "false");
+    EXPECT_TRUE((NotNull1(p1) > NotNull2(p2)) == (p1 > p2));
+    EXPECT_TRUE((NotNull2(p2) > NotNull1(p1)) == (p2 > p1));
 
-    CHECK((NotNull1(p1) <= NotNull1(p1)) == "true");
-    CHECK((NotNull1(p1) <= NotNull2(p2)) == (p1 <= p2));
-    CHECK((NotNull2(p2) <= NotNull1(p1)) == (p2 <= p1));
+    EXPECT_TRUE((NotNull1(p1) <= NotNull1(p1)) == "true");
+    EXPECT_TRUE((NotNull1(p1) <= NotNull2(p2)) == (p1 <= p2));
+    EXPECT_TRUE((NotNull2(p2) <= NotNull1(p1)) == (p2 <= p1));
 
-    CHECK((NotNull1(p1) >= NotNull1(p1)) == "true");
-    CHECK((NotNull1(p1) >= NotNull2(p2)) == (p1 >= p2));
-    CHECK((NotNull2(p2) >= NotNull1(p1)) == (p2 >= p1));
+    EXPECT_TRUE((NotNull1(p1) >= NotNull1(p1)) == "true");
+    EXPECT_TRUE((NotNull1(p1) >= NotNull2(p2)) == (p1 >= p2));
+    EXPECT_TRUE((NotNull2(p2) >= NotNull1(p1)) == (p2 >= p1));
 }
 
 #if defined(__cplusplus) && (__cplusplus >= 201703L)
 
-GSL_SUPPRESS(con.4) // NO-FORMAT: attribute
-TEST_CASE("TestNotNullConstructorTypeDeduction")
+TEST(notnull_tests, TestNotNullConstructorTypeDeduction)
 {
     {
         int i = 42;
@@ -428,7 +438,7 @@ TEST_CASE("TestNotNullConstructorTypeDeduction")
         helper(not_null{&i});
         helper_const(not_null{&i});
 
-        CHECK(*x == 42);
+        EXPECT_TRUE(*x == 42);
     }
 
     {
@@ -439,15 +449,21 @@ TEST_CASE("TestNotNullConstructorTypeDeduction")
         helper(not_null{p});
         helper_const(not_null{p});
 
-        CHECK(*x == 42);
+        EXPECT_TRUE(*x == 42);
     }
+
+    const auto terminateHandler = std::set_terminate([] {
+        std::cerr << "Expected Death. TestNotNullConstructorTypeDeduction";
+        std::abort();
+    });
+    const auto expected = GetExpectedDeathString(terminateHandler);
 
     {
         auto workaround_macro = []() {
             int* p1 = nullptr;
             const not_null x{p1};
         };
-        CHECK_THROWS_AS(workaround_macro(), fail_fast);
+        EXPECT_DEATH(workaround_macro(), expected);
     }
 
     {
@@ -455,14 +471,14 @@ TEST_CASE("TestNotNullConstructorTypeDeduction")
             const int* p1 = nullptr;
             const not_null x{p1};
         };
-        CHECK_THROWS_AS(workaround_macro(), fail_fast);
+        EXPECT_DEATH(workaround_macro(), expected);
     }
 
     {
         int* p = nullptr;
 
-        CHECK_THROWS_AS(helper(not_null{p}), fail_fast);
-        CHECK_THROWS_AS(helper_const(not_null{p}), fail_fast);
+        EXPECT_DEATH(helper(not_null{p}), expected);
+        EXPECT_DEATH(helper_const(not_null{p}), expected);
     }
 
 #ifdef CONFIRM_COMPILATION_ERRORS
@@ -475,7 +491,7 @@ TEST_CASE("TestNotNullConstructorTypeDeduction")
 }
 #endif // #if defined(__cplusplus) && (__cplusplus >= 201703L)
 
-TEST_CASE("TestMakeNotNull")
+TEST(notnull_tests, TestMakeNotNull)
 {
     {
         int i = 42;
@@ -484,7 +500,7 @@ TEST_CASE("TestMakeNotNull")
         helper(make_not_null(&i));
         helper_const(make_not_null(&i));
 
-        CHECK(*x == 42);
+        EXPECT_TRUE(*x == 42);
     }
 
     {
@@ -495,42 +511,60 @@ TEST_CASE("TestMakeNotNull")
         helper(make_not_null(p));
         helper_const(make_not_null(p));
 
-        CHECK(*x == 42);
+        EXPECT_TRUE(*x == 42);
     }
+
+    const auto terminateHandler = std::set_terminate([] {
+        std::cerr << "Expected Death. TestMakeNotNull";
+        std::abort();
+    });
+    const auto expected = GetExpectedDeathString(terminateHandler);
 
     {
         const auto workaround_macro = []() {
             int* p1 = nullptr;
             const auto x = make_not_null(p1);
-            CHECK(*x == 42);
+            EXPECT_TRUE(*x == 42);
         };
-        CHECK_THROWS_AS(workaround_macro(), fail_fast);
+        EXPECT_DEATH(workaround_macro(), expected);
     }
 
     {
         const auto workaround_macro = []() {
             const int* p1 = nullptr;
             const auto x = make_not_null(p1);
-            CHECK(*x == 42);
+            EXPECT_TRUE(*x == 42);
         };
-        CHECK_THROWS_AS(workaround_macro(), fail_fast);
+        EXPECT_DEATH(workaround_macro(), expected);
     }
 
     {
         int* p = nullptr;
 
-        CHECK_THROWS_AS(helper(make_not_null(p)), fail_fast);
-        CHECK_THROWS_AS(helper_const(make_not_null(p)), fail_fast);
+        EXPECT_DEATH(helper(make_not_null(p)), expected);
+        EXPECT_DEATH(helper_const(make_not_null(p)), expected);
     }
 
 #ifdef CONFIRM_COMPILATION_ERRORS
     {
-        CHECK_THROWS_AS(make_not_null(nullptr), fail_fast);
-        CHECK_THROWS_AS(helper(make_not_null(nullptr)), fail_fast);
-        CHECK_THROWS_AS(helper_const(make_not_null(nullptr)), fail_fast);
+        EXPECT_DEATH(make_not_null(nullptr), expected);
+        EXPECT_DEATH(helper(make_not_null(nullptr)), expected);
+        EXPECT_DEATH(helper_const(make_not_null(nullptr)), expected);
     }
 #endif
 }
 
-static_assert(std::is_nothrow_move_constructible<not_null<void*>>::value,
-              "not_null must be no-throw move constructible");
+TEST(notnull_tests, TestStdHash)
+{
+    int x = 42;
+    int y = 99;
+    not_null<int*> nn{&x};
+    const not_null<int*> cnn{&x};
+
+    std::hash<not_null<int*>> hash_nn;
+    std::hash<int*> hash_intptr;
+
+    EXPECT_TRUE(hash_nn(nn) == hash_intptr(&x));
+    EXPECT_FALSE(hash_nn(nn) == hash_intptr(&y));
+    EXPECT_FALSE(hash_nn(nn) == hash_intptr(nullptr));
+}

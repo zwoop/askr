@@ -14,40 +14,30 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifdef _MSC_VER
-// blanket turn off warnings from CppCoreCheck from catch
-// so people aren't annoyed by them when running the tool.
-#pragma warning(disable : 26440 26426) // from catch
-
-#endif
-
-#include <catch/catch.hpp> // for AssertionHandler, StringRef, CHECK, TEST_...
+#include <gtest/gtest.h>
 
 #include <gsl/pointers> // for owner
 
 using namespace gsl;
 
-GSL_SUPPRESS(f.23) // NO-FORMAT: attribute
+GSL_SUPPRESS(f .23) // NO-FORMAT: attribute
 void f(int* i) { *i += 1; }
 
-GSL_SUPPRESS(r.11) // NO-FORMAT: attribute
-GSL_SUPPRESS(r.3) // NO-FORMAT: attribute // TODO: false positive
-GSL_SUPPRESS(r.5) // NO-FORMAT: attribute
-TEST_CASE("basic_test")
+TEST(owner_tests, basic_test)
 {
     owner<int*> p = new int(120);
-    CHECK(*p == 120);
+    EXPECT_TRUE(*p == 120);
     f(p);
-    CHECK(*p == 121);
+    EXPECT_TRUE(*p == 121);
     delete p;
 }
 
-TEST_CASE("check_pointer_constraint")
+TEST(owner_tests, check_pointer_constraint)
 {
-    #ifdef CONFIRM_COMPILATION_ERRORS
+#ifdef CONFIRM_COMPILATION_ERRORS
     {
         owner<int> integerTest = 10;
         owner<std::shared_ptr<int>> sharedPtrTest(new int(10));
     }
-    #endif
+#endif
 }
