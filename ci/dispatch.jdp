@@ -19,14 +19,14 @@ pipeline {
     stages {
         stage("Dispatch") {
             parallel {
-                stage('Fedora 29') {
+                stage('Fedora 37') {
                     steps {
-                        build 'askr-master-fedora-29'
+                        build 'askr-master-fedora-37'
                     }
                 }
-                stage('Ubuntu 18') {
+                stage('Ubuntu 22') {
                     steps {
-                        build 'askr-master-ubuntu-1804'
+                        build 'askr-master-ubuntu-2204'
                     }
                 }
                 stage('FreeBSD 12') {
