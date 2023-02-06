@@ -38,15 +38,15 @@ Options::get_short_options()
     for (auto const &opt : *this) {
         res += opt.short_opt();
         switch (opt.has_arg()) {
-            case required_argument:
-                res += ':';
-                break;
-            case optional_argument:
-                res += "::";
-                break;
-            default:
-                // This covers no_argument as well, since that gets done first
-                break;
+        case required_argument:
+            res += ':';
+            break;
+        case optional_argument:
+            res += "::";
+            break;
+        default:
+            // This covers no_argument as well, since that gets done first
+            break;
         }
     }
 

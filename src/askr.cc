@@ -54,11 +54,13 @@ main(int argc, char **argv)
     // This is the standard set of getopt_long options that we always must support. We'll add to this one,
     // with the addition of script specific options. Note that these don't populate the name field, that is
     // only used (and needed) by plugins for identification.
-    askr::Options askr_options = {{{"debug", 'D', "enable and set a debug level (bit-field)", required_argument},
-                                   {"verbose", 'V', "enable verbose output and results ", no_argument},
-                                   {"help", 'H', "show the help message (this)", no_argument}}};
+    askr::Options askr_options = {
+        {{"debug", 'D', "enable and set a debug level (bit-field)", required_argument},
+         {"verbose", 'V', "enable verbose output and results ", no_argument},
+         {"help", 'H', "show the help message (this)", no_argument}}
+    };
     bool verbose_flag = false;
-    int option_index = 0;
+    int option_index  = 0;
 
     if (GSL_LIKELY(argc >= 2)) {
         YAML::Node config;
@@ -86,7 +88,7 @@ main(int argc, char **argv)
         }
 
         // Now parse the command line options
-        std::string short_opt = askr_options.get_short_options();
+        std::string short_opt                         = askr_options.get_short_options();
         std::unique_ptr<askr::GetoptOption[]> options = askr_options.as_getopt();
 
         while (true) {
@@ -96,26 +98,26 @@ main(int argc, char **argv)
                 break;
 
             switch (c) {
-                case 'D': {
-                    std::string arg(optarg);
-                    if (arg.size() > 2 && arg.substr(0, 2) == "0x") {
-                        unsigned long long val;
+            case 'D': {
+                std::string arg(optarg);
+                if (arg.size() > 2 && arg.substr(0, 2) == "0x") {
+                    unsigned long long val;
 
-                        std::istringstream(arg) >> std::hex >> val;
-                        askr::debug::gLevel |= {val};
-                    } else {
-                        askr::debug::gLevel.set(std::stoi(optarg));
-                    }
-                } break;
-                case 'V':
-                    verbose_flag = true;
-                    break;
-                case 'H':
-                    askr_options.print_help();
-                    break;
-                default:
-                    // ToDo: Here we have to deal with all the "custom" options for the plugins used
-                    break;
+                    std::istringstream(arg) >> std::hex >> val;
+                    askr::debug::gLevel |= {val};
+                } else {
+                    askr::debug::gLevel.set(std::stoi(optarg));
+                }
+            } break;
+            case 'V':
+                verbose_flag = true;
+                break;
+            case 'H':
+                askr_options.print_help();
+                break;
+            default:
+                // ToDo: Here we have to deal with all the "custom" options for the plugins used
+                break;
             }
         }
     } else {
