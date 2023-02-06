@@ -14,120 +14,140 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifdef _MSC_VER
-// blanket turn off warnings from CppCoreCheck from catch
-// so people aren't annoyed by them when running the tool.
-#pragma warning(disable : 26440 26426) // from catch
-
-#endif
-
-#include <catch/catch.hpp> // for AssertionHandler, StringRef, CHECK, TEST_...
-
-#include <gsl/gsl_util> // for narrow, finally, narrow_cast, narrowing_e...
+#include <gtest/gtest.h>
 
 #include <algorithm>   // for move
+#include <complex>
+#include <cstddef>     // for std::ptrdiff_t
 #include <functional>  // for reference_wrapper, _Bind_helper<>::type
+#include <gsl/narrow>  // for narrow, narrowing_error
+#include <gsl/util>    // finally, narrow_cast
 #include <limits>      // for numeric_limits
 #include <stdint.h>    // for uint32_t, int32_t
 #include <type_traits> // for is_same
 
 using namespace gsl;
 
-TEST_CASE("sanity check for gsl::index typedef")
+namespace
+{
+void f(int& i) { i += 1; }
+static int j = 0;
+void g() { j += 1; }
+} // namespace
+
+TEST(utils_tests, sanity_check_for_gsl_index_typedef)
 {
     static_assert(std::is_same<gsl::index, std::ptrdiff_t>::value,
                   "gsl::index represents wrong arithmetic type");
 }
 
-void f(int& i) { i += 1; }
-
-TEST_CASE("finally_lambda")
+TEST(utils_tests, finally_lambda)
 {
     int i = 0;
     {
         auto _ = finally([&]() { f(i); });
-        CHECK(i == 0);
+        EXPECT_TRUE(i == 0);
     }
-    CHECK(i == 1);
+    EXPECT_TRUE(i == 1);
 }
 
-TEST_CASE("finally_lambda_move")
+TEST(utils_tests, finally_lambda_move)
 {
     int i = 0;
     {
         auto _1 = finally([&]() { f(i); });
         {
             auto _2 = std::move(_1);
-            CHECK(i == 0);
+            EXPECT_TRUE(i == 0);
         }
-        CHECK(i == 1);
+        EXPECT_TRUE(i == 1);
         {
             auto _2 = std::move(_1);
-            CHECK(i == 1);
+            EXPECT_TRUE(i == 1);
         }
-        CHECK(i == 1);
+        EXPECT_TRUE(i == 1);
     }
-    CHECK(i == 1);
+    EXPECT_TRUE(i == 1);
 }
 
-TEST_CASE("finally_function_with_bind")
+TEST(utils_tests, finally_const_lvalue_lambda)
+{
+    int i = 0;
+    {
+        const auto const_lvalue_lambda = [&]() { f(i); };
+        auto _ = finally(const_lvalue_lambda);
+        EXPECT_TRUE(i == 0);
+    }
+    EXPECT_TRUE(i == 1);
+}
+
+TEST(utils_tests, finally_mutable_lvalue_lambda)
+{
+    int i = 0;
+    {
+        auto mutable_lvalue_lambda = [&]() { f(i); };
+        auto _ = finally(mutable_lvalue_lambda);
+        EXPECT_TRUE(i == 0);
+    }
+    EXPECT_TRUE(i == 1);
+}
+
+TEST(utils_tests, finally_function_with_bind)
 {
     int i = 0;
     {
         auto _ = finally(std::bind(&f, std::ref(i)));
-        CHECK(i == 0);
+        EXPECT_TRUE(i == 0);
     }
-    CHECK(i == 1);
+    EXPECT_TRUE(i == 1);
 }
 
-static int j = 0;
-void g() { j += 1; }
-TEST_CASE("finally_function_ptr")
+TEST(utils_tests, finally_function_ptr)
 {
     j = 0;
     {
         auto _ = finally(&g);
-        CHECK(j == 0);
+        EXPECT_TRUE(j == 0);
     }
-    CHECK(j == 1);
+    EXPECT_TRUE(j == 1);
 }
 
-GSL_SUPPRESS(con.4) // NO-FORMAT: attribute
-TEST_CASE("narrow_cast")
+TEST(utils_tests, narrow_cast)
 {
     int n = 120;
     char c = narrow_cast<char>(n);
-    CHECK(c == 120);
+    EXPECT_TRUE(c == 120);
 
     n = 300;
     unsigned char uc = narrow_cast<unsigned char>(n);
-    CHECK(uc == 44);
+    EXPECT_TRUE(uc == 44);
 }
 
-GSL_SUPPRESS(con.5) // NO-FORMAT: attribute
-TEST_CASE("narrow")
+#ifndef GSL_KERNEL_MODE
+TEST(utils_tests, narrow)
 {
     int n = 120;
     const char c = narrow<char>(n);
-    CHECK(c == 120);
+    EXPECT_TRUE(c == 120);
 
     n = 300;
-    CHECK_THROWS_AS(narrow<char>(n), narrowing_error);
+    EXPECT_THROW(narrow<char>(n), narrowing_error);
 
     const auto int32_max = std::numeric_limits<int32_t>::max();
     const auto int32_min = std::numeric_limits<int32_t>::min();
 
-    CHECK(narrow<uint32_t>(int32_t(0)) == 0);
-    CHECK(narrow<uint32_t>(int32_t(1)) == 1);
-    CHECK(narrow<uint32_t>(int32_max) == static_cast<uint32_t>(int32_max));
+    EXPECT_TRUE(narrow<uint32_t>(int32_t(0)) == 0);
+    EXPECT_TRUE(narrow<uint32_t>(int32_t(1)) == 1);
+    EXPECT_TRUE(narrow<uint32_t>(int32_max) == static_cast<uint32_t>(int32_max));
 
-    CHECK_THROWS_AS(narrow<uint32_t>(int32_t(-1)), narrowing_error);
-    CHECK_THROWS_AS(narrow<uint32_t>(int32_min), narrowing_error);
+    EXPECT_THROW(narrow<uint32_t>(int32_t(-1)), narrowing_error);
+    EXPECT_THROW(narrow<uint32_t>(int32_min), narrowing_error);
 
     n = -42;
-    CHECK_THROWS_AS(narrow<unsigned>(n), narrowing_error);
+    EXPECT_THROW(narrow<unsigned>(n), narrowing_error);
 
-#if GSL_CONSTEXPR_NARROW
-    static_assert(narrow<char>(120) == 120, "Fix GSL_CONSTEXPR_NARROW");
-#endif
+    EXPECT_TRUE(
+        narrow<std::complex<float>>(std::complex<double>(4, 2)) == std::complex<float>(4, 2));
+    EXPECT_THROW(narrow<std::complex<float>>(std::complex<double>(4.2)), narrowing_error);
 }
+#endif // GSL_KERNEL_MODE

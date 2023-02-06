@@ -1,6 +1,6 @@
-## Contributing to the Guideline Support Library
+## Contributing to the Guidelines Support Library
 
-The Guideline Support Library (GSL) contains functions and types that are suggested for use by the
+The Guidelines Support Library (GSL) contains functions and types that are suggested for use by the
 [C++ Core Guidelines](https://github.com/isocpp/CppCoreGuidelines). GSL design changes are made only as a result of modifications to the Guidelines. 
 
 GSL is accepting contributions that improve or refine any of the types in this library as well as ports to other platforms. Changes should have an issue 
@@ -17,7 +17,7 @@ Please submit a Contributor License Agreement (CLA) before submitting a pull req
 Your pull request should: 
 
 * Include a description of what your change intends to do
-* Be a child commit of a reasonably recent commit in the **master** branch 
+* Be a child commit of a reasonably recent commit in the **main** branch 
     * Requests need not be a single commit, but should be a linear sequence of commits (i.e. no merge commits in your PR)
 * It is desirable, but not necessary, for the tests to pass at each commit. Please see [README.md](./README.md) for instructions to build the test suite. 
 * Have clear commit messages 

@@ -14,16 +14,9 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifdef _MSC_VER
-// blanket turn off warnings from CppCoreCheck from catch
-// so people aren't annoyed by them when running the tool.
-#pragma warning(disable : 26440 26426) // from catch
+#include <gtest/gtest.h>
 
-#endif
-
-#include <catch/catch.hpp> // for AssertionHandler, StringRef, CHECK, TEST_...
-
-#include <gsl/gsl_assert>  // for Expects, fail_fast (ptr only)
+#include <gsl/assert>      // for Expects, fail_fast (ptr only)
 #include <gsl/pointers>    // for owner
 #include <gsl/span>        // for span, dynamic_extent
 #include <gsl/string_span> // for basic_string_span, operator==, ensure_z
@@ -35,7 +28,8 @@
 #include <type_traits> // for remove_reference<>::type
 #include <vector>      // for vector, allocator
 
-using namespace std;
+#include "deathTestCommon.h"
+
 using namespace gsl;
 
 // Generic string functions
@@ -44,8 +38,6 @@ namespace generic
 {
 
 template <typename CharT>
-GSL_SUPPRESS(bounds.1) // NO-FORMAT: attribute
-GSL_SUPPRESS(f.23) // NO-FORMAT: attribute
 auto strlen(const CharT* s)
 {
     auto p = s;
@@ -54,7 +46,6 @@ auto strlen(const CharT* s)
 }
 
 template <typename CharT>
-GSL_SUPPRESS(bounds.1) // NO-FORMAT: attribute
 auto strnlen(const CharT* s, std::size_t n)
 {
     return std::find(s, s + n, CharT{0}) - s;
@@ -62,78 +53,167 @@ auto strnlen(const CharT* s, std::size_t n)
 
 } // namespace generic
 
-GSL_SUPPRESS(con.4) // NO-FORMAT: attribute
-TEST_CASE("TestLiteralConstruction")
+namespace
+{
+
+template <typename T>
+T move_wrapper(T&& t)
+{
+    return std::move(t);
+}
+
+// not used otherwise
+#ifdef CONFIRM_COMPILATION_ERRORS
+
+template <class T>
+T create()
+{
+    return T{};
+}
+
+template <class T>
+void use(basic_string_span<T, gsl::dynamic_extent>)
+{}
+#endif
+
+czstring_span<> CreateTempName(string_span<> span)
+{
+    Expects(span.size() > 1);
+
+    std::size_t last = 0;
+    if (span.size() > 4)
+    {
+        span[0] = 't';
+        span[1] = 'm';
+        span[2] = 'p';
+        last = 3;
+    }
+    span[last] = '\0';
+
+    auto ret = span.subspan(0, 4);
+    return {ret};
+}
+
+cwzstring_span<> CreateTempNameW(wstring_span<> span)
+{
+    Expects(span.size() > 1);
+
+    std::size_t last = 0;
+    if (span.size() > 4)
+    {
+        span[0] = L't';
+        span[1] = L'm';
+        span[2] = L'p';
+        last = 3;
+    }
+    span[last] = L'\0';
+
+    auto ret = span.subspan(0, 4);
+    return {ret};
+}
+
+cu16zstring_span<> CreateTempNameU16(u16string_span<> span)
+{
+    Expects(span.size() > 1);
+
+    std::size_t last = 0;
+    if (span.size() > 4)
+    {
+        span[0] = u't';
+        span[1] = u'm';
+        span[2] = u'p';
+        last = 3;
+    }
+    span[last] = u'\0';
+
+    auto ret = span.subspan(0, 4);
+    return {ret};
+}
+
+cu32zstring_span<> CreateTempNameU32(u32string_span<> span)
+{
+    Expects(span.size() > 1);
+
+    std::size_t last = 0;
+    if (span.size() > 4)
+    {
+        span[0] = U't';
+        span[1] = U'm';
+        span[2] = U'p';
+        last = 3;
+    }
+    span[last] = U'\0';
+
+    auto ret = span.subspan(0, 4);
+    return {ret};
+}
+} // namespace
+
+TEST(string_span_tests, TestLiteralConstruction)
 {
     cwstring_span<> v = ensure_z(L"Hello");
-    CHECK(5 == v.length());
+    EXPECT_TRUE(5 == v.length());
 
 #ifdef CONFIRM_COMPILATION_ERRORS
     wstring_span<> v2 = ensure0(L"Hello");
 #endif
 }
-GSL_SUPPRESS(con.4) // NO-FORMAT: attribute
 
-TEST_CASE("TestConstructFromStdString")
+TEST(string_span_tests, TestConstructFromStdString)
 {
     std::string s = "Hello there world";
     cstring_span<> v = s;
-    CHECK(v.length() == static_cast<cstring_span<>::index_type>(s.length()));
+    EXPECT_TRUE(v.length() == static_cast<cstring_span<>::size_type>(s.length()));
 }
 
-GSL_SUPPRESS(con.4) // NO-FORMAT: attribute
-TEST_CASE("TestConstructFromStdVector")
+TEST(string_span_tests, TestConstructFromStdVector)
 {
     std::vector<char> vec(5, 'h');
     string_span<> v{vec};
-    CHECK(v.length() == static_cast<string_span<>::index_type>(vec.size()));
+    EXPECT_TRUE(v.length() == static_cast<string_span<>::size_type>(vec.size()));
 }
 
-GSL_SUPPRESS(con.4) // NO-FORMAT: attribute
-TEST_CASE("TestStackArrayConstruction")
+TEST(string_span_tests, TestStackArrayConstruction)
 {
     wchar_t stack_string[] = L"Hello";
 
     {
         cwstring_span<> v = ensure_z(stack_string);
-        CHECK(v.length() == 5);
+        EXPECT_TRUE(v.length() == 5);
     }
 
     {
         cwstring_span<> v = stack_string;
-        CHECK(v.length() == 5);
+        EXPECT_TRUE(v.length() == 5);
     }
 
     {
         wstring_span<> v = ensure_z(stack_string);
-        CHECK(v.length() == 5);
+        EXPECT_TRUE(v.length() == 5);
     }
 
     {
         wstring_span<> v = stack_string;
-        CHECK(v.length() == 5);
+        EXPECT_TRUE(v.length() == 5);
     }
 }
 
-GSL_SUPPRESS(con.4) // NO-FORMAT: attribute
-TEST_CASE("TestConstructFromConstCharPointer")
+TEST(string_span_tests, TestConstructFromConstCharPointer)
 {
     const char* s = "Hello";
     cstring_span<> v = ensure_z(s);
-    CHECK(v.length() == 5);
+    EXPECT_TRUE(v.length() == 5);
 }
 
-GSL_SUPPRESS(con.4) // NO-FORMAT: attribute
-TEST_CASE("TestConversionToConst")
+TEST(string_span_tests, TestConversionToConst)
 {
     char stack_string[] = "Hello";
     string_span<> v = ensure_z(stack_string);
     cstring_span<> v2 = v;
-    CHECK(v.length() == v2.length());
+    EXPECT_TRUE(v.length() == v2.length());
 }
 
-GSL_SUPPRESS(con.4) // NO-FORMAT: attribute
-TEST_CASE("TestConversionFromConst")
+TEST(string_span_tests, TestConversionFromConst)
 {
     char stack_string[] = "Hello";
     cstring_span<> v = ensure_z(stack_string);
@@ -144,44 +224,40 @@ TEST_CASE("TestConversionFromConst")
 #endif
 }
 
-GSL_SUPPRESS(con.4) // NO-FORMAT: attribute
-TEST_CASE("TestToString")
+TEST(string_span_tests, TestToString)
 {
     auto s = gsl::to_string(cstring_span<>{});
-    CHECK(s.length() == 0);
+    EXPECT_TRUE(s.length() == static_cast<size_t>(0));
 
     char stack_string[] = "Hello";
     cstring_span<> v = ensure_z(stack_string);
     auto s2 = gsl::to_string(v);
-    CHECK(static_cast<cstring_span<>::index_type>(s2.length()) == v.length());
-    CHECK(s2.length() == 5);
+    EXPECT_TRUE(static_cast<cstring_span<>::size_type>(s2.length()) == v.length());
+    EXPECT_TRUE(s2.length() == static_cast<size_t>(5));
 }
 
-GSL_SUPPRESS(con.4) // NO-FORMAT: attribute
-TEST_CASE("TestToBasicString")
+TEST(string_span_tests, TestToBasicString)
 {
     auto s = gsl::to_basic_string<char, std::char_traits<char>, ::std::allocator<char>>(
         cstring_span<>{});
-    CHECK(s.length() == 0);
+    EXPECT_TRUE(s.length() == static_cast<size_t>(0));
 
     char stack_string[] = "Hello";
     cstring_span<> v = ensure_z(stack_string);
     auto s2 = gsl::to_basic_string<char, std::char_traits<char>, ::std::allocator<char>>(v);
-    CHECK(static_cast<cstring_span<>::index_type>(s2.length()) == v.length());
-    CHECK(s2.length() == 5);
+    EXPECT_TRUE(static_cast<cstring_span<>::size_type>(s2.length()) == v.length());
+    EXPECT_TRUE(s2.length() == static_cast<size_t>(5));
 }
 
-GSL_SUPPRESS(con.4) // NO-FORMAT: attribute
-GSL_SUPPRESS(bounds.3) // NO-FORMAT: attribute
-TEST_CASE("EqualityAndImplicitConstructors")
+TEST(string_span_tests, EqualityAndImplicitConstructors)
 {
     {
         cstring_span<> span = "Hello";
         cstring_span<> span1;
 
         // comparison to empty span
-        CHECK(span1 != span);
-        CHECK(span != span1);
+        EXPECT_TRUE(span1 != span);
+        EXPECT_TRUE(span != span1);
     }
 
     {
@@ -189,8 +265,8 @@ TEST_CASE("EqualityAndImplicitConstructors")
         cstring_span<> span1 = "Hello1";
 
         // comparison to different span
-        CHECK(span1 != span);
-        CHECK(span != span1);
+        EXPECT_TRUE(span1 != span);
+        EXPECT_TRUE(span != span1);
     }
 
     {
@@ -205,31 +281,31 @@ TEST_CASE("EqualityAndImplicitConstructors")
         gsl::span<const char> sp = ensure_z("Hello");
 
         // comparison to  literal
-        CHECK(span == cstring_span<>("Hello"));
+        EXPECT_TRUE(span == cstring_span<>("Hello"));
 
         // comparison to static array with no null termination
-        CHECK(span == cstring_span<>(ar));
+        EXPECT_TRUE(span == cstring_span<>(ar));
 
         // comparison to static array with null at the end
-        CHECK(span == cstring_span<>(ar1));
+        EXPECT_TRUE(span == cstring_span<>(ar1));
 
         // comparison to static array with null in the middle
-        CHECK(span == cstring_span<>(ar2));
+        EXPECT_TRUE(span == cstring_span<>(ar2));
 
         // comparison to null-terminated c string
-        CHECK(span == cstring_span<>(ptr, 5));
+        EXPECT_TRUE(span == cstring_span<>(ptr, 5));
 
         // comparison to string
-        CHECK(span == cstring_span<>(str));
+        EXPECT_TRUE(span == cstring_span<>(str));
 
         // comparison to vector of charaters with no null termination
-        CHECK(span == cstring_span<>(vec));
+        EXPECT_TRUE(span == cstring_span<>(vec));
 
         // comparison to span
-        CHECK(span == cstring_span<>(sp));
+        EXPECT_TRUE(span == cstring_span<>(sp));
 
         // comparison to string_span
-        CHECK(span == span);
+        EXPECT_TRUE(span == span);
     }
 
     {
@@ -245,28 +321,28 @@ TEST_CASE("EqualityAndImplicitConstructors")
         gsl::span<char> sp = ensure_z(ar1);
 
         // comparison to static array with no null termination
-        CHECK(span == string_span<>(ar));
+        EXPECT_TRUE(span == string_span<>(ar));
 
         // comparison to static array with null at the end
-        CHECK(span == string_span<>(ar1));
+        EXPECT_TRUE(span == string_span<>(ar1));
 
         // comparison to static array with null in the middle
-        CHECK(span == string_span<>(ar2));
+        EXPECT_TRUE(span == string_span<>(ar2));
 
         // comparison to null-terminated c string
-        CHECK(span == string_span<>(ptr, 5));
+        EXPECT_TRUE(span == string_span<>(ptr, 5));
 
         // comparison to string
-        CHECK(span == string_span<>(str));
+        EXPECT_TRUE(span == string_span<>(str));
 
         // comparison to vector of charaters with no null termination
-        CHECK(span == string_span<>(vec));
+        EXPECT_TRUE(span == string_span<>(vec));
 
         // comparison to span
-        CHECK(span == string_span<>(sp));
+        EXPECT_TRUE(span == string_span<>(sp));
 
         // comparison to string_span
-        CHECK(span == span);
+        EXPECT_TRUE(span == span);
     }
 
     {
@@ -281,28 +357,28 @@ TEST_CASE("EqualityAndImplicitConstructors")
 
         // const span, const other type
 
-        CHECK(span == "Hello");
-        CHECK(span == ar);
-        CHECK(span == ar1);
-        CHECK(span == ar2);
+        EXPECT_TRUE(span == "Hello");
+        EXPECT_TRUE(span == ar);
+        EXPECT_TRUE(span == ar1);
+        EXPECT_TRUE(span == ar2);
 #ifdef CONFIRM_COMPILATION_ERRORS
         const char* ptr = "Hello";
-        CHECK(span == ptr);
+        EXPECT_TRUE(span == ptr);
 #endif
-        CHECK(span == str);
-        CHECK(span == vec);
-        CHECK(span == sp);
+        EXPECT_TRUE(span == str);
+        EXPECT_TRUE(span == vec);
+        EXPECT_TRUE(span == sp);
 
-        CHECK("Hello" == span);
-        CHECK(ar == span);
-        CHECK(ar1 == span);
-        CHECK(ar2 == span);
+        EXPECT_TRUE("Hello" == span);
+        EXPECT_TRUE(ar == span);
+        EXPECT_TRUE(ar1 == span);
+        EXPECT_TRUE(ar2 == span);
 #ifdef CONFIRM_COMPILATION_ERRORS
-        CHECK(ptr == span);
+        EXPECT_TRUE(ptr == span);
 #endif
-        CHECK(str == span);
-        CHECK(vec == span);
-        CHECK(sp == span);
+        EXPECT_TRUE(str == span);
+        EXPECT_TRUE(vec == span);
+        EXPECT_TRUE(sp == span);
 
         // const span, non-const other type
 
@@ -314,78 +390,78 @@ TEST_CASE("EqualityAndImplicitConstructors")
         std::vector<char> _vec = {'H', 'e', 'l', 'l', 'o'};
         gsl::span<char> _sp{_ar, 5};
 
-        CHECK(span == _ar);
-        CHECK(span == _ar1);
-        CHECK(span == _ar2);
+        EXPECT_TRUE(span == _ar);
+        EXPECT_TRUE(span == _ar1);
+        EXPECT_TRUE(span == _ar2);
 #ifdef CONFIRM_COMPILATION_ERRORS
-        CHECK(span == _ptr);
+        EXPECT_TRUE(span == _ptr);
 #endif
-        CHECK(span == _str);
-        CHECK(span == _vec);
-        CHECK(span == _sp);
+        EXPECT_TRUE(span == _str);
+        EXPECT_TRUE(span == _vec);
+        EXPECT_TRUE(span == _sp);
 
-        CHECK(_ar == span);
-        CHECK(_ar1 == span);
-        CHECK(_ar2 == span);
+        EXPECT_TRUE(_ar == span);
+        EXPECT_TRUE(_ar1 == span);
+        EXPECT_TRUE(_ar2 == span);
 #ifdef CONFIRM_COMPILATION_ERRORS
-        CHECK(_ptr == span);
+        EXPECT_TRUE(_ptr == span);
 #endif
-        CHECK(_str == span);
-        CHECK(_vec == span);
-        CHECK(_sp == span);
+        EXPECT_TRUE(_str == span);
+        EXPECT_TRUE(_vec == span);
+        EXPECT_TRUE(_sp == span);
 
         string_span<> _span{_ptr, 5};
 
         // non-const span, non-const other type
 
-        CHECK(_span == _ar);
-        CHECK(_span == _ar1);
-        CHECK(_span == _ar2);
+        EXPECT_TRUE(_span == _ar);
+        EXPECT_TRUE(_span == _ar1);
+        EXPECT_TRUE(_span == _ar2);
 #ifdef CONFIRM_COMPILATION_ERRORS
-        CHECK(_span == _ptr);
+        EXPECT_TRUE(_span == _ptr);
 #endif
-        CHECK(_span == _str);
-        CHECK(_span == _vec);
-        CHECK(_span == _sp);
+        EXPECT_TRUE(_span == _str);
+        EXPECT_TRUE(_span == _vec);
+        EXPECT_TRUE(_span == _sp);
 
-        CHECK(_ar == _span);
-        CHECK(_ar1 == _span);
-        CHECK(_ar2 == _span);
+        EXPECT_TRUE(_ar == _span);
+        EXPECT_TRUE(_ar1 == _span);
+        EXPECT_TRUE(_ar2 == _span);
 #ifdef CONFIRM_COMPILATION_ERRORS
-        CHECK(_ptr == _span);
+        EXPECT_TRUE(_ptr == _span);
 #endif
-        CHECK(_str == _span);
-        CHECK(_vec == _span);
-        CHECK(_sp == _span);
+        EXPECT_TRUE(_str == _span);
+        EXPECT_TRUE(_vec == _span);
+        EXPECT_TRUE(_sp == _span);
 
         // non-const span, const other type
 
-        CHECK(_span == "Hello");
-        CHECK(_span == ar);
-        CHECK(_span == ar1);
-        CHECK(_span == ar2);
+        EXPECT_TRUE(_span == "Hello");
+        EXPECT_TRUE(_span == ar);
+        EXPECT_TRUE(_span == ar1);
+        EXPECT_TRUE(_span == ar2);
 #ifdef CONFIRM_COMPILATION_ERRORS
-        CHECK(_span == ptr);
+        EXPECT_TRUE(_span == ptr);
 #endif
-        CHECK(_span == str);
-        CHECK(_span == vec);
-        CHECK(_span == sp);
+        EXPECT_TRUE(_span == str);
+        EXPECT_TRUE(_span == vec);
+        EXPECT_TRUE(_span == sp);
 
-        CHECK("Hello" == _span);
-        CHECK(ar == _span);
-        CHECK(ar1 == _span);
-        CHECK(ar2 == _span);
+        EXPECT_TRUE("Hello" == _span);
+        EXPECT_TRUE(ar == _span);
+        EXPECT_TRUE(ar1 == _span);
+        EXPECT_TRUE(ar2 == _span);
 #ifdef CONFIRM_COMPILATION_ERRORS
-        CHECK(ptr == _span);
+        EXPECT_TRUE(ptr == _span);
 #endif
-        CHECK(str == _span);
-        CHECK(vec == _span);
-        CHECK(sp == _span);
+        EXPECT_TRUE(str == _span);
+        EXPECT_TRUE(vec == _span);
+        EXPECT_TRUE(sp == _span);
 
         // two spans
 
-        CHECK(_span == span);
-        CHECK(span == _span);
+        EXPECT_TRUE(_span == span);
+        EXPECT_TRUE(span == _span);
     }
 
     {
@@ -395,13 +471,11 @@ TEST_CASE("EqualityAndImplicitConstructors")
         cstring_span<> span2 = str2;
 
         // comparison of spans from the same vector before and after move (ok)
-        CHECK(span1 == span2);
+        EXPECT_TRUE(span1 == span2);
     }
 }
 
-GSL_SUPPRESS(con.4) // NO-FORMAT: attribute
-GSL_SUPPRESS(bounds.3) // NO-FORMAT: attribute
-TEST_CASE("ComparisonAndImplicitConstructors")
+TEST(string_span_tests, ComparisonAndImplicitConstructors)
 {
     {
         cstring_span<> span = "Hello";
@@ -414,26 +488,26 @@ TEST_CASE("ComparisonAndImplicitConstructors")
         const std::vector<char> vec = {'H', 'e', 'l', 'l', 'o'};
 
         // comparison to  literal
-        CHECK(span < cstring_span<>("Helloo"));
-        CHECK(span > cstring_span<>("Hell"));
+        EXPECT_TRUE(span < cstring_span<>("Helloo"));
+        EXPECT_TRUE(span > cstring_span<>("Hell"));
 
         // comparison to static array with no null termination
-        CHECK(span >= cstring_span<>(ar));
+        EXPECT_TRUE(span >= cstring_span<>(ar));
 
         // comparison to static array with null at the end
-        CHECK(span <= cstring_span<>(ar1));
+        EXPECT_TRUE(span <= cstring_span<>(ar1));
 
         // comparison to static array with null in the middle
-        CHECK(span >= cstring_span<>(ar2));
+        EXPECT_TRUE(span >= cstring_span<>(ar2));
 
         // comparison to null-terminated c string
-        CHECK(span <= cstring_span<>(ptr, 5));
+        EXPECT_TRUE(span <= cstring_span<>(ptr, 5));
 
         // comparison to string
-        CHECK(span >= cstring_span<>(str));
+        EXPECT_TRUE(span >= cstring_span<>(str));
 
         // comparison to vector of charaters with no null termination
-        CHECK(span <= cstring_span<>(vec));
+        EXPECT_TRUE(span <= cstring_span<>(vec));
     }
 
     {
@@ -451,45 +525,40 @@ TEST_CASE("ComparisonAndImplicitConstructors")
         std::vector<char> vec = {'H', 'e', 'l', 'l', 'o'};
 
         // comparison to static array with no null termination
-        CHECK(span <= string_span<>(ar));
-        CHECK(span < string_span<>(rarr));
-        CHECK(span > string_span<>(larr));
+        EXPECT_TRUE(span <= string_span<>(ar));
+        EXPECT_TRUE(span < string_span<>(rarr));
+        EXPECT_TRUE(span > string_span<>(larr));
 
         // comparison to static array with null at the end
-        CHECK(span >= string_span<>(ar1));
+        EXPECT_TRUE(span >= string_span<>(ar1));
 
         // comparison to static array with null in the middle
-        CHECK(span <= string_span<>(ar2));
+        EXPECT_TRUE(span <= string_span<>(ar2));
 
         // comparison to null-terminated c string
-        CHECK(span >= string_span<>(ptr, 5));
+        EXPECT_TRUE(span >= string_span<>(ptr, 5));
 
         // comparison to string
-        CHECK(span <= string_span<>(str));
+        EXPECT_TRUE(span <= string_span<>(str));
 
         // comparison to vector of charaters with no null termination
-        CHECK(span >= string_span<>(vec));
+        EXPECT_TRUE(span >= string_span<>(vec));
     }
 }
 
-GSL_SUPPRESS(con.4) // NO-FORMAT: attribute
-GSL_SUPPRESS(r.11) // NO-FORMAT: attribute
-GSL_SUPPRESS(r.3) // NO-FORMAT: attribute
-GSL_SUPPRESS(r.5) // NO-FORMAT: attribute
-GSL_SUPPRESS(bounds.1) // NO-FORMAT: attribute
-TEST_CASE("ConstrutorsEnsureZ")
+TEST(string_span_tests, ConstrutorsEnsureZ)
 {
     // remove z from literals
     {
         cstring_span<> sp = "hello";
-        CHECK((sp.length() == 5));
+        EXPECT_TRUE(sp.length() == 5);
     }
 
     // take the string as is
     {
         auto str = std::string("hello");
         cstring_span<> sp = str;
-        CHECK((sp.length() == 5));
+        EXPECT_TRUE(sp.length() == 5);
     }
 
     // ensure z on c strings
@@ -501,15 +570,13 @@ TEST_CASE("ConstrutorsEnsureZ")
         ptr[2] = '\0';
 
         string_span<> span = ensure_z(ptr);
-        CHECK(span.length() == 2);
+        EXPECT_TRUE(span.length() == 2);
 
         delete[] ptr;
     }
 }
 
-GSL_SUPPRESS(con.4) // NO-FORMAT: attribute
-GSL_SUPPRESS(bounds.3) // NO-FORMAT: attribute
-TEST_CASE("Constructors")
+TEST(string_span_tests, Constructors)
 {
     // creating cstring_span
 
@@ -517,7 +584,7 @@ TEST_CASE("Constructors")
     {
         span<const char, 6> sp = "Hello";
         cstring_span<> span = sp;
-        CHECK(span.length() == 6);
+        EXPECT_TRUE(span.length() == 6);
     }
 
 // from const span of a final extent to non-const string_span
@@ -525,7 +592,7 @@ TEST_CASE("Constructors")
     {
         span<const char, 6> sp = "Hello";
         string_span<> span = sp;
-        CHECK(span.length() == 6);
+        EXPECT_TRUE(span.length() == 6);
     }
 #endif
 
@@ -539,48 +606,48 @@ TEST_CASE("Constructors")
     // default
     {
         cstring_span<> span;
-        CHECK(span.length() == 0);
+        EXPECT_TRUE(span.length() == 0);
     }
 
     // from string literal
     {
         cstring_span<> span = "Hello";
-        CHECK(span.length() == 5);
+        EXPECT_TRUE(span.length() == 5);
     }
 
     // from const static array
     {
         const char ar[] = {'H', 'e', 'l', 'l', 'o'};
         cstring_span<> span = ar;
-        CHECK(span.length() == 5);
+        EXPECT_TRUE(span.length() == 5);
     }
 
     // from non-const static array
     {
         char ar[] = {'H', 'e', 'l', 'l', 'o'};
         cstring_span<> span = ar;
-        CHECK(span.length() == 5);
+        EXPECT_TRUE(span.length() == 5);
     }
 
     // from const ptr and length
     {
         const char* ptr = "Hello";
         cstring_span<> span{ptr, 5};
-        CHECK(span.length() == 5);
+        EXPECT_TRUE(span.length() == 5);
     }
 
     // from const ptr and length, include 0
     {
         const char* ptr = "Hello";
         cstring_span<> span{ptr, 6};
-        CHECK(span.length() == 6);
+        EXPECT_TRUE(span.length() == 6);
     }
 
     // from const ptr and length, 0 inside
     {
         const char* ptr = "He\0lo";
         cstring_span<> span{ptr, 5};
-        CHECK(span.length() == 5);
+        EXPECT_TRUE(span.length() == 5);
     }
 
     // from non-const ptr and length
@@ -588,7 +655,7 @@ TEST_CASE("Constructors")
         char ar[] = {'H', 'e', 'l', 'l', 'o'};
         char* ptr = ar;
         cstring_span<> span{ptr, 5};
-        CHECK(span.length() == 5);
+        EXPECT_TRUE(span.length() == 5);
     }
 
     // from non-const ptr and length, 0 inside
@@ -596,35 +663,35 @@ TEST_CASE("Constructors")
         char ar[] = {'H', 'e', '\0', 'l', 'o'};
         char* ptr = ar;
         cstring_span<> span{ptr, 5};
-        CHECK(span.length() == 5);
+        EXPECT_TRUE(span.length() == 5);
     }
 
     // from const string
     {
         const std::string str = "Hello";
         const cstring_span<> span = str;
-        CHECK(span.length() == 5);
+        EXPECT_TRUE(span.length() == 5);
     }
 
     // from non-const string
     {
         std::string str = "Hello";
         const cstring_span<> span = str;
-        CHECK(span.length() == 5);
+        EXPECT_TRUE(span.length() == 5);
     }
 
     // from const vector
     {
         const std::vector<char> vec = {'H', 'e', 'l', 'l', 'o'};
         const cstring_span<> span = vec;
-        CHECK(span.length() == 5);
+        EXPECT_TRUE(span.length() == 5);
     }
 
     // from non-const vector
     {
         std::vector<char> vec = {'H', 'e', 'l', 'l', 'o'};
         const cstring_span<> span = vec;
-        CHECK(span.length() == 5);
+        EXPECT_TRUE(span.length() == 5);
     }
 
     // from const span
@@ -632,7 +699,7 @@ TEST_CASE("Constructors")
         const std::vector<char> vec = {'H', 'e', 'l', 'l', 'o'};
         const span<const char> inner = vec;
         const cstring_span<> span = inner;
-        CHECK(span.length() == 5);
+        EXPECT_TRUE(span.length() == 5);
     }
 
     // from non-const span
@@ -640,7 +707,7 @@ TEST_CASE("Constructors")
         std::vector<char> vec = {'H', 'e', 'l', 'l', 'o'};
         const span<char> inner = vec;
         const cstring_span<> span = inner;
-        CHECK(span.length() == 5);
+        EXPECT_TRUE(span.length() == 5);
     }
 
     // from const string_span
@@ -648,7 +715,7 @@ TEST_CASE("Constructors")
         const std::vector<char> vec = {'H', 'e', 'l', 'l', 'o'};
         const cstring_span<> tmp = vec;
         const cstring_span<> span = tmp;
-        CHECK(span.length() == 5);
+        EXPECT_TRUE(span.length() == 5);
     }
 
     // from non-const string_span
@@ -656,7 +723,7 @@ TEST_CASE("Constructors")
         std::vector<char> vec = {'H', 'e', 'l', 'l', 'o'};
         string_span<> tmp = vec;
         cstring_span<> span = tmp;
-        CHECK(span.length() == 5);
+        EXPECT_TRUE(span.length() == 5);
     }
 
     // creating string_span
@@ -673,7 +740,7 @@ TEST_CASE("Constructors")
 #ifdef CONFIRM_COMPILATION_ERRORS
         const char ar[] = {'H', 'e', 'l', 'l', 'o'};
         string_span<> span = ar;
-        CHECK(span.length() == 5);
+        EXPECT_TRUE(span.length() == 5);
 #endif
     }
 
@@ -681,7 +748,7 @@ TEST_CASE("Constructors")
     {
         char ar[] = {'H', 'e', 'l', 'l', 'o'};
         string_span<> span = ar;
-        CHECK(span.length() == 5);
+        EXPECT_TRUE(span.length() == 5);
     }
 
     // from const ptr and length
@@ -689,7 +756,7 @@ TEST_CASE("Constructors")
 #ifdef CONFIRM_COMPILATION_ERRORS
         const char* ptr = "Hello";
         string_span<> span{ptr, 5};
-        CHECK(span.length() == 5);
+        EXPECT_TRUE(span.length() == 5);
 #endif
     }
 
@@ -698,7 +765,7 @@ TEST_CASE("Constructors")
         char ar[] = {'H', 'e', 'l', 'l', 'o'};
         char* ptr = ar;
         string_span<> span{ptr, 5};
-        CHECK(span.length() == 5);
+        EXPECT_TRUE(span.length() == 5);
     }
 
     // from const string
@@ -706,7 +773,7 @@ TEST_CASE("Constructors")
 #ifdef CONFIRM_COMPILATION_ERRORS
         const std::string str = "Hello";
         string_span<> span = str;
-        CHECK(span.length() == 5);
+        EXPECT_TRUE(span.length() == 5);
 #endif
     }
 
@@ -714,7 +781,7 @@ TEST_CASE("Constructors")
     {
         std::string str = "Hello";
         string_span<> span = str;
-        CHECK(span.length() == 5);
+        EXPECT_TRUE(span.length() == 5);
     }
 
     // from const vector
@@ -722,7 +789,7 @@ TEST_CASE("Constructors")
 #ifdef CONFIRM_COMPILATION_ERRORS
         const std::vector<char> vec = {'H', 'e', 'l', 'l', 'o'};
         string_span<> span = vec;
-        CHECK(span.length() == 5);
+        EXPECT_TRUE(span.length() == 5);
 #endif
     }
 
@@ -730,7 +797,7 @@ TEST_CASE("Constructors")
     {
         std::vector<char> vec = {'H', 'e', 'l', 'l', 'o'};
         string_span<> span = vec;
-        CHECK(span.length() == 5);
+        EXPECT_TRUE(span.length() == 5);
     }
 
     // from const span
@@ -739,7 +806,7 @@ TEST_CASE("Constructors")
         std::vector<char> vec = {'H', 'e', 'l', 'l', 'o'};
         const span<const char> inner = vec;
         string_span<> span = inner;
-        CHECK(span.length() == 5);
+        EXPECT_TRUE(span.length() == 5);
 #endif
     }
 
@@ -748,7 +815,7 @@ TEST_CASE("Constructors")
         std::vector<char> vec = {'H', 'e', 'l', 'l', 'o'};
         span<char> inner = vec;
         string_span<> span = inner;
-        CHECK(span.length() == 5);
+        EXPECT_TRUE(span.length() == 5);
     }
 
     // from non-const span of non-const data from const vector
@@ -757,7 +824,7 @@ TEST_CASE("Constructors")
         const std::vector<char> vec = {'H', 'e', 'l', 'l', 'o'};
         const span<char> inner = vec;
         string_span<> span = inner;
-        CHECK(span.length() == 5);
+        EXPECT_TRUE(span.length() == 5);
 #endif
     }
 
@@ -767,7 +834,7 @@ TEST_CASE("Constructors")
         std::vector<char> vec = {'H', 'e', 'l', 'l', 'o'};
         cstring_span<> tmp = vec;
         string_span<> span = tmp;
-        CHECK(span.length() == 5);
+        EXPECT_TRUE(span.length() == 5);
 #endif
     }
 
@@ -776,7 +843,7 @@ TEST_CASE("Constructors")
         std::vector<char> vec = {'H', 'e', 'l', 'l', 'o'};
         const string_span<> tmp = vec;
         const string_span<> span = tmp;
-        CHECK(span.length() == 5);
+        EXPECT_TRUE(span.length() == 5);
     }
 
     // from non-const string_span from const vector
@@ -785,7 +852,7 @@ TEST_CASE("Constructors")
         const std::vector<char> vec = {'H', 'e', 'l', 'l', 'o'};
         string_span<> tmp = vec;
         string_span<> span = tmp;
-        CHECK(span.length() == 5);
+        EXPECT_TRUE(span.length() == 5);
 #endif
     }
 
@@ -794,56 +861,39 @@ TEST_CASE("Constructors")
         std::vector<char> vec = {'H', 'e', 'l', 'l', 'o'};
         const string_span<> tmp = vec;
         const string_span<> span = tmp;
-        CHECK(span.length() == 5);
+        EXPECT_TRUE(span.length() == 5);
     }
 }
 
-template <typename T>
-T move_wrapper(T&& t)
-{
-    return std::move(t);
-}
-
-template <class T>
-T create()
-{
-    return T{};
-}
-
-template <class T>
-void use(basic_string_span<T, gsl::dynamic_extent>)
-{
-}
-
-TEST_CASE("MoveConstructors")
+TEST(string_span_tests, MoveConstructors)
 {
     // move string_span
     {
         cstring_span<> span = "Hello";
         const auto span1 = std::move(span);
-        CHECK(span1.length() == 5);
+        EXPECT_TRUE(span1.length() == 5);
     }
     {
         cstring_span<> span = "Hello";
         const auto span1 = move_wrapper(std::move(span));
-        CHECK(span1.length() == 5);
+        EXPECT_TRUE(span1.length() == 5);
     }
     {
         cstring_span<> span = "Hello";
         const auto span1 = move_wrapper(std::move(span));
-        CHECK(span1.length() == 5);
+        EXPECT_TRUE(span1.length() == 5);
     }
 
     // move span
     {
         span<const char> span = ensure_z("Hello");
         const cstring_span<> span1 = std::move(span);
-        CHECK(span1.length() == 5);
+        EXPECT_TRUE(span1.length() == 5);
     }
     {
         span<const char> span = ensure_z("Hello");
         const cstring_span<> span2 = move_wrapper(std::move(span));
-        CHECK(span2.length() == 5);
+        EXPECT_TRUE(span2.length() == 5);
     }
 
     // move string
@@ -851,14 +901,14 @@ TEST_CASE("MoveConstructors")
 #ifdef CONFIRM_COMPILATION_ERRORS
         std::string str = "Hello";
         string_span<> span = std::move(str);
-        CHECK(span.length() == 5);
+        EXPECT_TRUE(span.length() == 5);
 #endif
     }
     {
 #ifdef CONFIRM_COMPILATION_ERRORS
         std::string str = "Hello";
         string_span<> span = move_wrapper<std::string>(std::move(str));
-        CHECK(span.length() == 5);
+        EXPECT_TRUE(span.length() == 5);
 #endif
     }
     {
@@ -872,14 +922,14 @@ TEST_CASE("MoveConstructors")
 #ifdef CONFIRM_COMPILATION_ERRORS
         std::vector<char> vec = {'H', 'e', 'l', 'l', 'o'};
         string_span<> span = std::move(vec);
-        CHECK(span.length() == 5);
+        EXPECT_TRUE(span.length() == 5);
 #endif
     }
     {
 #ifdef CONFIRM_COMPILATION_ERRORS
         std::vector<char> vec = {'H', 'e', 'l', 'l', 'o'};
         string_span<> span = move_wrapper<std::vector<char>>(std::move(vec));
-        CHECK(span.length() == 5);
+        EXPECT_TRUE(span.length() == 5);
 #endif
     }
     {
@@ -889,36 +939,22 @@ TEST_CASE("MoveConstructors")
     }
 }
 
-TEST_CASE("Conversion")
+TEST(string_span_tests, Conversion)
 {
 #ifdef CONFIRM_COMPILATION_ERRORS
     cstring_span<> span = "Hello";
     cwstring_span<> wspan{span};
-    CHECK(wspan.length() == 5);
+    EXPECT_TRUE(wspan.length() == 5);
 #endif
 }
 
-czstring_span<> CreateTempName(string_span<> span)
+TEST(string_span_tests, zstring)
 {
-    Expects(span.size() > 1);
-
-    int last = 0;
-    if (span.size() > 4) {
-        span[0] = 't';
-        span[1] = 'm';
-        span[2] = 'p';
-        last = 3;
-    }
-    span[last] = '\0';
-
-    auto ret = span.subspan(0, 4);
-    return {ret};
-}
-
-GSL_SUPPRESS(con.4) // NO-FORMAT: attribute
-GSL_SUPPRESS(bounds.1) // NO-FORMAT: attribute
-TEST_CASE("zstring")
-{
+    const auto terminateHandler = std::set_terminate([] {
+        std::cerr << "Expected Death. zstring";
+        std::abort();
+    });
+    const auto expected = GetExpectedDeathString(terminateHandler);
 
     // create zspan from zero terminated string
     {
@@ -927,9 +963,9 @@ TEST_CASE("zstring")
 
         zstring_span<> zspan({buf, 1});
 
-        CHECK(generic::strlen(zspan.assume_z()) == 0);
-        CHECK(zspan.as_string_span().size() == 0);
-        CHECK(zspan.ensure_z().size() == 0);
+        EXPECT_TRUE(generic::strlen(zspan.assume_z()) == 0);
+        EXPECT_TRUE(zspan.as_string_span().size() == 0);
+        EXPECT_TRUE(zspan.ensure_z().size() == 0);
     }
 
     // create zspan from non-zero terminated string
@@ -938,7 +974,7 @@ TEST_CASE("zstring")
         buf[0] = 'a';
 
         auto workaround_macro = [&]() { const zstring_span<> zspan({buf, 1}); };
-        CHECK_THROWS_AS(workaround_macro(), fail_fast);
+        EXPECT_DEATH(workaround_macro(), expected);
     }
 
     // usage scenario: create zero-terminated temp file name and pass to a legacy API
@@ -946,35 +982,22 @@ TEST_CASE("zstring")
         char buf[10];
 
         auto name = CreateTempName({buf, 10});
-        if (!name.empty()) {
-            czstring<> str = name.assume_z();
-            CHECK(generic::strlen(str) == 3);
-            CHECK(*(str + 3) == '\0');
+        if (!name.empty())
+        {
+            czstring str = name.assume_z();
+            EXPECT_TRUE(generic::strlen(str) == 3);
+            EXPECT_TRUE(*(str + 3) == '\0');
         }
     }
 }
 
-cwzstring_span<> CreateTempNameW(wstring_span<> span)
+TEST(string_span_tests, wzstring)
 {
-    Expects(span.size() > 1);
-
-    int last = 0;
-    if (span.size() > 4) {
-        span[0] = L't';
-        span[1] = L'm';
-        span[2] = L'p';
-        last = 3;
-    }
-    span[last] = L'\0';
-
-    auto ret = span.subspan(0, 4);
-    return {ret};
-}
-
-GSL_SUPPRESS(con.4) // NO-FORMAT: attribute
-GSL_SUPPRESS(bounds.1) // NO-FORMAT: attribute
-TEST_CASE("wzstring")
-{
+    const auto terminateHandler = std::set_terminate([] {
+        std::cerr << "Expected Death. wzstring";
+        std::abort();
+    });
+    const auto expected = GetExpectedDeathString(terminateHandler);
 
     // create zspan from zero terminated string
     {
@@ -983,9 +1006,9 @@ TEST_CASE("wzstring")
 
         wzstring_span<> zspan({buf, 1});
 
-        CHECK(generic::strnlen(zspan.assume_z(), 1) == 0);
-        CHECK(zspan.as_string_span().size() == 0);
-        CHECK(zspan.ensure_z().size() == 0);
+        EXPECT_TRUE(generic::strnlen(zspan.assume_z(), 1) == 0);
+        EXPECT_TRUE(zspan.as_string_span().size() == 0);
+        EXPECT_TRUE(zspan.ensure_z().size() == 0);
     }
 
     // create zspan from non-zero terminated string
@@ -994,7 +1017,7 @@ TEST_CASE("wzstring")
         buf[0] = L'a';
 
         const auto workaround_macro = [&]() { const wzstring_span<> zspan({buf, 1}); };
-        CHECK_THROWS_AS(workaround_macro(), fail_fast);
+        EXPECT_DEATH(workaround_macro(), expected);
     }
 
     // usage scenario: create zero-terminated temp file name and pass to a legacy API
@@ -1002,35 +1025,22 @@ TEST_CASE("wzstring")
         wchar_t buf[10];
 
         const auto name = CreateTempNameW({buf, 10});
-        if (!name.empty()) {
-            cwzstring<> str = name.assume_z();
-            CHECK(generic::strnlen(str, 10) == 3);
-            CHECK(*(str + 3) == L'\0');
+        if (!name.empty())
+        {
+            cwzstring str = name.assume_z();
+            EXPECT_TRUE(generic::strnlen(str, 10) == 3);
+            EXPECT_TRUE(*(str + 3) == L'\0');
         }
     }
 }
 
-cu16zstring_span<> CreateTempNameU16(u16string_span<> span)
+TEST(string_span_tests, u16zstring)
 {
-    Expects(span.size() > 1);
-
-    int last = 0;
-    if (span.size() > 4) {
-        span[0] = u't';
-        span[1] = u'm';
-        span[2] = u'p';
-        last = 3;
-    }
-    span[last] = u'\0';
-
-    auto ret = span.subspan(0, 4);
-    return {ret};
-}
-
-GSL_SUPPRESS(con.4) // NO-FORMAT: attribute
-GSL_SUPPRESS(bounds.1) // NO-FORMAT: attribute
-TEST_CASE("u16zstring")
-{
+    const auto terminateHandler = std::set_terminate([] {
+        std::cerr << "Expected Death. u16zstring";
+        std::abort();
+    });
+    const auto expected = GetExpectedDeathString(terminateHandler);
 
     // create zspan from zero terminated string
     {
@@ -1039,9 +1049,9 @@ TEST_CASE("u16zstring")
 
         u16zstring_span<> zspan({buf, 1});
 
-        CHECK(generic::strnlen(zspan.assume_z(), 1) == 0);
-        CHECK(zspan.as_string_span().size() == 0);
-        CHECK(zspan.ensure_z().size() == 0);
+        EXPECT_TRUE(generic::strnlen(zspan.assume_z(), 1) == 0);
+        EXPECT_TRUE(zspan.as_string_span().size() == 0);
+        EXPECT_TRUE(zspan.ensure_z().size() == 0);
     }
 
     // create zspan from non-zero terminated string
@@ -1050,7 +1060,7 @@ TEST_CASE("u16zstring")
         buf[0] = u'a';
 
         const auto workaround_macro = [&]() { const u16zstring_span<> zspan({buf, 1}); };
-        CHECK_THROWS_AS(workaround_macro(), fail_fast);
+        EXPECT_DEATH(workaround_macro(), expected);
     }
 
     // usage scenario: create zero-terminated temp file name and pass to a legacy API
@@ -1058,35 +1068,22 @@ TEST_CASE("u16zstring")
         char16_t buf[10];
 
         const auto name = CreateTempNameU16({buf, 10});
-        if (!name.empty()) {
-            cu16zstring<> str = name.assume_z();
-            CHECK(generic::strnlen(str, 10) == 3);
-            CHECK(*(str + 3) == L'\0');
+        if (!name.empty())
+        {
+            cu16zstring str = name.assume_z();
+            EXPECT_TRUE(generic::strnlen(str, 10) == 3);
+            EXPECT_TRUE(*(str + 3) == L'\0');
         }
     }
 }
 
-cu32zstring_span<> CreateTempNameU32(u32string_span<> span)
+TEST(string_span_tests, u32zstring)
 {
-    Expects(span.size() > 1);
-
-    int last = 0;
-    if (span.size() > 4) {
-        span[0] = U't';
-        span[1] = U'm';
-        span[2] = U'p';
-        last = 3;
-    }
-    span[last] = U'\0';
-
-    auto ret = span.subspan(0, 4);
-    return {ret};
-}
-
-GSL_SUPPRESS(con.4) // NO-FORMAT: attribute
-GSL_SUPPRESS(bounds.1) // NO-FORMAT: attribute
-TEST_CASE("u32zstring")
-{
+    const auto terminateHandler = std::set_terminate([] {
+        std::cerr << "Expected Death. u31zstring";
+        std::abort();
+    });
+    const auto expected = GetExpectedDeathString(terminateHandler);
 
     // create zspan from zero terminated string
     {
@@ -1095,9 +1092,9 @@ TEST_CASE("u32zstring")
 
         u32zstring_span<> zspan({buf, 1});
 
-        CHECK(generic::strnlen(zspan.assume_z(), 1) == 0);
-        CHECK(zspan.as_string_span().size() == 0);
-        CHECK(zspan.ensure_z().size() == 0);
+        EXPECT_TRUE(generic::strnlen(zspan.assume_z(), 1) == 0);
+        EXPECT_TRUE(zspan.as_string_span().size() == 0);
+        EXPECT_TRUE(zspan.ensure_z().size() == 0);
     }
 
     // create zspan from non-zero terminated string
@@ -1106,7 +1103,7 @@ TEST_CASE("u32zstring")
         buf[0] = u'a';
 
         const auto workaround_macro = [&]() { const u32zstring_span<> zspan({buf, 1}); };
-        CHECK_THROWS_AS(workaround_macro(), fail_fast);
+        EXPECT_DEATH(workaround_macro(), expected);
     }
 
     // usage scenario: create zero-terminated temp file name and pass to a legacy API
@@ -1114,120 +1111,115 @@ TEST_CASE("u32zstring")
         char32_t buf[10];
 
         const auto name = CreateTempNameU32({buf, 10});
-        if (!name.empty()) {
-            cu32zstring<> str = name.assume_z();
-            CHECK(generic::strnlen(str, 10) == 3);
-            CHECK(*(str + 3) == L'\0');
+        if (!name.empty())
+        {
+            cu32zstring str = name.assume_z();
+            EXPECT_TRUE(generic::strnlen(str, 10) == 3);
+            EXPECT_TRUE(*(str + 3) == L'\0');
         }
     }
 }
 
-TEST_CASE("Issue305")
+TEST(string_span_tests, Issue305)
 {
     std::map<gsl::cstring_span<>, int> foo = {{"foo", 0}, {"bar", 1}};
-    CHECK(foo["foo"] == 0);
-    CHECK(foo["bar"] == 1);
+    EXPECT_TRUE(foo["foo"] == 0);
+    EXPECT_TRUE(foo["bar"] == 1);
 }
 
-GSL_SUPPRESS(con.4) // NO-FORMAT: attribute
-GSL_SUPPRESS(bounds.3) // NO-FORMAT: attribute
-TEST_CASE("char16_t type")
+TEST(string_span_tests, char16_t_type)
 {
     gsl::cu16string_span<> ss1 = gsl::ensure_z(u"abc");
-    CHECK(ss1.size() == 3);
-    CHECK(ss1.size_bytes() == 6);
+    EXPECT_TRUE(ss1.size() == 3);
+    EXPECT_TRUE(ss1.size_bytes() == 6);
 
     std::u16string s1 = gsl::to_string(ss1);
-    CHECK(s1 == u"abc");
+    EXPECT_TRUE(s1 == u"abc");
 
     std::u16string s2 = u"abc";
     gsl::u16string_span<> ss2 = s2;
-    CHECK(ss2.size() == 3);
+    EXPECT_TRUE(ss2.size() == 3);
 
     gsl::u16string_span<> ss3 = ss2.subspan(1, 1);
-    CHECK(ss3.size() == 1);
-    CHECK(ss3[0] == u'b');
+    EXPECT_TRUE(ss3.size() == 1);
+    EXPECT_TRUE(ss3[0] == u'b');
 
     char16_t buf[4]{u'a', u'b', u'c', u'\0'};
     gsl::u16string_span<> ss4{buf, 4};
-    CHECK(ss4[3] == u'\0');
+    EXPECT_TRUE(ss4[3] == u'\0');
 
     gsl::cu16zstring_span<> ss5(u"abc");
-    CHECK(ss5.as_string_span().size() == 3);
+    EXPECT_TRUE((ss5.as_string_span().size()) == 3);
 
     gsl::cu16string_span<> ss6 = ss5.as_string_span();
-    CHECK(ss6 == ss1);
+    EXPECT_TRUE(ss6 == ss1);
 
     std::vector<char16_t> v7 = {u'a', u'b', u'c'};
     gsl::cu16string_span<> ss7{v7};
-    CHECK(ss7 == ss1);
+    EXPECT_TRUE(ss7 == ss1);
 
     gsl::cu16string_span<> ss8 = gsl::ensure_z(u"abc");
     gsl::cu16string_span<> ss9 = gsl::ensure_z(u"abc");
-    CHECK(ss8 == ss9);
+    EXPECT_TRUE(ss8 == ss9);
 
     ss9 = gsl::ensure_z(u"abd");
-    CHECK(ss8 < ss9);
-    CHECK(ss8 <= ss9);
-    CHECK(ss8 != ss9);
+    EXPECT_TRUE(ss8 < ss9);
+    EXPECT_TRUE(ss8 <= ss9);
+    EXPECT_TRUE(ss8 != ss9);
 }
 
-GSL_SUPPRESS(con.4) // NO-FORMAT: attribute
-GSL_SUPPRESS(bounds.3) // NO-FORMAT: attribute
-TEST_CASE("char32_t type")
+TEST(string_span_tests, char32_t_type)
 {
     gsl::cu32string_span<> ss1 = gsl::ensure_z(U"abc");
-    CHECK(ss1.size() == 3);
-    CHECK(ss1.size_bytes() == 12);
+    EXPECT_TRUE(ss1.size() == 3);
+    EXPECT_TRUE(ss1.size_bytes() == 12);
 
     std::u32string s1 = gsl::to_string(ss1);
-    CHECK(s1 == U"abc");
+    EXPECT_TRUE(s1 == U"abc");
 
     std::u32string s2 = U"abc";
     gsl::u32string_span<> ss2 = s2;
-    CHECK(ss2.size() == 3);
+    EXPECT_TRUE(ss2.size() == 3);
 
     gsl::u32string_span<> ss3 = ss2.subspan(1, 1);
-    CHECK(ss3.size() == 1);
-    CHECK(ss3[0] == U'b');
+    EXPECT_TRUE(ss3.size() == 1);
+    EXPECT_TRUE(ss3[0] == U'b');
 
     char32_t buf[4]{U'a', U'b', U'c', U'\0'};
     gsl::u32string_span<> ss4{buf, 4};
-    CHECK(ss4[3] == u'\0');
+    EXPECT_TRUE(ss4[3] == u'\0');
 
     gsl::cu32zstring_span<> ss5(U"abc");
-    CHECK(ss5.as_string_span().size() == 3);
+    EXPECT_TRUE(ss5.as_string_span().size() == 3);
 
     gsl::cu32string_span<> ss6 = ss5.as_string_span();
-    CHECK(ss6 == ss1);
+    EXPECT_TRUE(ss6 == ss1);
 
     gsl::cu32string_span<> ss8 = gsl::ensure_z(U"abc");
     gsl::cu32string_span<> ss9 = gsl::ensure_z(U"abc");
-    CHECK(ss8 == ss9);
+    EXPECT_TRUE(ss8 == ss9);
 
     ss9 = gsl::ensure_z(U"abd");
-    CHECK(ss8 < ss9);
-    CHECK(ss8 <= ss9);
-    CHECK(ss8 != ss9);
+    EXPECT_TRUE(ss8 < ss9);
+    EXPECT_TRUE(ss8 <= ss9);
+    EXPECT_TRUE(ss8 != ss9);
 }
 
-GSL_SUPPRESS(con.4) // NO-FORMAT: attribute
-TEST_CASE("as_bytes")
+TEST(string_span_tests, as_bytes)
 {
     cwzstring_span<> v(L"qwerty");
     const auto s = v.as_string_span();
     const auto bs = as_bytes(s);
-    CHECK(static_cast<const void*>(bs.data()) == static_cast<const void*>(s.data()));
-    CHECK(bs.size() == s.size_bytes());
+    EXPECT_TRUE(static_cast<const void*>(bs.data()) == static_cast<const void*>(s.data()));
+    EXPECT_TRUE(bs.size() == s.size_bytes());
 }
 
-GSL_SUPPRESS(con.4) // NO-FORMAT: attribute
-TEST_CASE("as_writeable_bytes")
+TEST(string_span_tests, as_writable_bytes)
 {
     wchar_t buf[]{L"qwerty"};
     wzstring_span<> v(buf);
     const auto s = v.as_string_span();
-    const auto bs = as_writeable_bytes(s);
-    CHECK(static_cast<const void*>(bs.data()) == static_cast<const void*>(s.data()));
-    CHECK(bs.size() == s.size_bytes());
+    const auto bs = as_writable_bytes(s);
+    EXPECT_TRUE(static_cast<const void*>(bs.data()) == static_cast<const void*>(s.data()));
+    EXPECT_TRUE(bs.size() == s.size_bytes());
 }
