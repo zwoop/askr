@@ -19,8 +19,8 @@
 m4_define([ASKR_VERSION_S],[1.0.0])
 m4_define([ASKR_VERSION_N],[1000000])
 
-AC_PREREQ([2.69])
-AC_INIT([Askr Search Framework], ASKR_VERSION_S(), [leif@ogre.com], [askr], [https://github.com/zwoop/askr])
+AC_PREREQ([2.71])
+AC_INIT([Askr Search Framework],[ASKR_VERSION_S()],[leif@ogre.com],[askr],[https://github.com/zwoop/askr])
 
 AC_CONFIG_SRCDIR([src/askr.cc])
 AC_CONFIG_MACRO_DIR([build])
@@ -50,7 +50,7 @@ TS_CONFIG_NICE([config.nice])
 # in particular, on Linux they insert -g -O2, here we preserve any user CFLAGS
 _askr_saved_CXXFLAGS="${CXXFLAGS}"
 
-AC_PROG_LIBTOOL
+LT_INIT
 AC_PROG_CXX([clang++ c++ g++])
 
 CXXFLAGS="${_askr_saved_CXXFLAGS}"
