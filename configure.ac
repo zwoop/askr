@@ -19,7 +19,7 @@
 m4_define([ASKR_VERSION_S],[1.0.0])
 m4_define([ASKR_VERSION_N],[1000000])
 
-AC_PREREQ([2.71])
+AC_PREREQ([2.69])
 AC_INIT([Askr Search Framework],[ASKR_VERSION_S()],[leif@ogre.com],[askr],[https://github.com/zwoop/askr])
 
 AC_CONFIG_SRCDIR([src/askr.cc])
